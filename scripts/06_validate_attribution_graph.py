@@ -9,6 +9,10 @@ import _path_setup  # noqa: F401
 
 from tqdm import tqdm
 
+from qwen_clt.attribution.fidelity import (
+    print_fidelity_report,
+    replacement_fidelity_report,
+)
 from qwen_clt.attribution.validation import (
     ablation_matches_proxy_sign,
     feature_value,
@@ -38,6 +42,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=24)
     parser.add_argument("--min-activation", type=float, default=1e-8)
     parser.add_argument("--value", type=float, default=0.0)
+    parser.add_argument("--replacement-metrics", default=None)
+    parser.add_argument("--min-last-token-top1", type=float, default=0.3)
+    parser.add_argument("--max-target-logit-diff-mae", type=float, default=2.0)
+    parser.add_argument("--strict-fidelity", action="store_true")
     parser.add_argument("--output", default=None)
     return parser.parse_args()
 
@@ -49,6 +57,14 @@ def default_output_path(graph_path: str | Path) -> Path:
 
 def main() -> None:
     args = parse_args()
+
+    fidelity = replacement_fidelity_report(
+        checkpoint_path=args.checkpoint,
+        metrics_path=args.replacement_metrics,
+        min_last_token_top1=args.min_last_token_top1,
+        max_target_logit_diff_mae=args.max_target_logit_diff_mae,
+    )
+    print_fidelity_report(fidelity, strict=args.strict_fidelity)
 
     graph_payload = load_graph_payload(args.graph)
     node_indices = select_top_node_indices(
@@ -214,6 +230,7 @@ def main() -> None:
             "min_activation": float(args.min_activation),
             "intervention_value": float(args.value),
         },
+        "replacement_fidelity": fidelity,
         "summary": {
             "comparable_nodes": len(comparable),
             "proxy_causal_pearson": pearson_correlation(

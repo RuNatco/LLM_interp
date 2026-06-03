@@ -90,6 +90,13 @@ layernorm/error nodes и ошибки replacement model. Поэтому граф
 `intervened_logits` с `replacement_logits`. Новые graph JSON сохраняют это
 ограничение в поле `metadata`.
 
+`scripts/03_build_attribution_graph.py` и
+`scripts/06_validate_attribution_graph.py` читают sibling-файл
+`replacement_eval_metrics.json` рядом с checkpoint и печатают fidelity warnings.
+С флагом `--strict-fidelity` низкая replacement fidelity останавливает graph или
+validation run. Без этого флага graph всё ещё можно строить как diagnostic
+proxy, но его нельзя описывать как faithful circuit.
+
 ## Causal validation
 
 `scripts/06_validate_attribution_graph.py` проверяет top-k узлов proxy graph
@@ -119,6 +126,21 @@ python scripts/06_validate_attribution_graph.py \
 `causal_effect`: feature поддерживала target direction, а зануление её ослабило.
 В summary отчёта также есть `proxy_causal_pearson`,
 `ablation_sign_match_rate` и средняя абсолютная proxy/causal ошибка.
+
+Для ручной проверки конкретной feature лучше выбирать узел из validation report,
+а не копировать старые индексы feature вручную:
+
+```bash
+python scripts/04_run_feature_interventions.py \
+  --checkpoint outputs/base_clt_v0/clt_final.pt \
+  --prompt "Demand is greater than generation, so the price will" \
+  --validation-report outputs/base_clt_v0/price_graph_validated.json \
+  --rank 1 \
+  --select-by abs_causal_effect \
+  --value 0.0 \
+  --positive " increase" \
+  --negative " decrease"
+```
 
 ## Training budget
 

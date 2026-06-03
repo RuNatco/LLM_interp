@@ -51,6 +51,10 @@ python scripts/03_build_attribution_graph.py \
   --output outputs/base_clt_v0/price_graph.json
 ```
 
+By default this reads `outputs/base_clt_v0/replacement_eval_metrics.json` and
+prints fidelity warnings before building the proxy graph. Use
+`--strict-fidelity` when you want low-fidelity replacement to stop the run.
+
 Validate graph nodes causally:
 
 ```bash
@@ -79,9 +83,9 @@ Optional single-feature intervention check:
 python scripts/04_run_feature_interventions.py \
   --checkpoint outputs/base_clt_v0/clt_final.pt \
   --prompt "Demand is greater than generation, so the price will" \
-  --layer 20 \
-  --pos 9 \
-  --feature 126 \
+  --validation-report outputs/base_clt_v0/price_graph_validated.json \
+  --rank 1 \
+  --select-by abs_causal_effect \
   --value 0.0 \
   --positive " increase" \
   --negative " decrease"
@@ -114,6 +118,9 @@ python scripts/03_build_attribution_graph.py \
   --output outputs/instruct_clt_v0/price_graph.json
 ```
 
+By default this reads `outputs/instruct_clt_v0/replacement_eval_metrics.json`
+and prints fidelity warnings before building the proxy graph.
+
 Validate graph nodes causally:
 
 ```bash
@@ -142,9 +149,9 @@ Optional single-feature intervention check:
 python scripts/04_run_feature_interventions.py \
   --checkpoint outputs/instruct_clt_v0/clt_final.pt \
   --prompt "Demand is greater than generation, so the price will" \
-  --layer 23 \
-  --pos 9 \
-  --feature 80 \
+  --validation-report outputs/instruct_clt_v0/price_graph_validated.json \
+  --rank 1 \
+  --select-by abs_causal_effect \
   --value 0.0 \
   --positive " increase" \
   --negative " decrease"
