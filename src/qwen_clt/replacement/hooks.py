@@ -12,6 +12,7 @@ from qwen_clt.interventions import FeatureIntervention
 @dataclass
 class ReplacementConfig:
     layer_idx: int | None = None
+    replacement_layers: tuple[int, ...] | None = None
     read_from: str = "mlp_normed_input"
     replace_at: str = "mlp_output"
     replace_mode: str = "full"
@@ -85,6 +86,12 @@ class LayerReplacementHook:
                 "LayerReplacementHook replaces layer.mlp outputs and currently "
                 "supports only replace_at='mlp_output'. "
                 f"Got replace_at={self.config.replace_at!r}."
+            )
+
+        if self.config.layer_idx is not None and self.config.replacement_layers is not None:
+            raise ValueError(
+                "Use either layer_idx for a single replacement layer or "
+                "replacement_layers for an explicit set, not both."
             )
 
         for item in self.config.feature_interventions:
@@ -246,6 +253,21 @@ class LayerReplacementHook:
 
         return features @ decoder
 
+    def _target_bias(
+        self,
+        tgt: int,
+        target_shape_like: torch.Tensor,
+    ) -> torch.Tensor:
+        if not hasattr(self.autoencoder, "decoder_bias"):
+            return torch.zeros_like(target_shape_like)
+
+        bias = self.autoencoder.decoder_bias[tgt].to(
+            device=target_shape_like.device,
+            dtype=target_shape_like.dtype,
+        )
+
+        return bias.view(1, 1, -1).expand_as(target_shape_like).clone()
+
     def _reconstruct_target_layer(
         self,
         tgt: int,
@@ -257,7 +279,10 @@ class LayerReplacementHook:
                 "The MLP hook must cache current layer input before reconstruction."
             )
 
-        reconstruction = torch.zeros_like(target_shape_like)
+        reconstruction = self._target_bias(
+            tgt=tgt,
+            target_shape_like=target_shape_like,
+        )
 
         max_src = min(tgt, self.autoencoder.n_layers - 1)
 
@@ -291,10 +316,7 @@ class LayerReplacementHook:
             # layer.mlp input, i.e. post-attention-normalized hidden states.
             self.cached_inputs[layer_idx] = mlp_input
 
-            should_replace = (
-                self.config.layer_idx is None
-                or int(self.config.layer_idx) == int(layer_idx)
-            )
+            should_replace = self._should_replace_layer(layer_idx)
 
             if not should_replace:
                 return output
@@ -317,6 +339,48 @@ class LayerReplacementHook:
 
         return hook_fn
 
+    def _replacement_layer_set(self) -> set[int] | None:
+        if self.config.layer_idx is not None:
+            return {int(self.config.layer_idx)}
+        if self.config.replacement_layers is not None:
+            return {int(layer_idx) for layer_idx in self.config.replacement_layers}
+        return None
+
+    def _should_replace_layer(self, layer_idx: int) -> bool:
+        replacement_layers = self._replacement_layer_set()
+        return replacement_layers is None or int(layer_idx) in replacement_layers
+
+    def _validate_replacement_layers(
+        self,
+        mlp_modules: list[nn.Module],
+    ) -> list[int]:
+        replacement_layers = self._replacement_layer_set()
+
+        if replacement_layers is None:
+            return list(range(min(len(mlp_modules), self.autoencoder.n_layers)))
+
+        if not replacement_layers:
+            raise ValueError("replacement_layers cannot be empty.")
+
+        for layer_idx in replacement_layers:
+            if layer_idx < 0:
+                raise IndexError(
+                    f"replacement layer must be non-negative. Got {layer_idx}."
+                )
+            if layer_idx >= len(mlp_modules):
+                raise IndexError(
+                    f"replacement layer={layer_idx} is outside model layers "
+                    f"0..{len(mlp_modules) - 1}."
+                )
+            if layer_idx >= self.autoencoder.n_layers:
+                raise IndexError(
+                    f"replacement layer={layer_idx} is outside CLT layers "
+                    f"0..{self.autoencoder.n_layers - 1}."
+                )
+
+        max_layer = max(replacement_layers)
+        return list(range(max_layer + 1))
+
     def install(self):
         if self.handles:
             raise RuntimeError("Replacement hooks are already installed.")
@@ -327,30 +391,7 @@ class LayerReplacementHook:
 
         mlp_modules = self._get_mlp_modules()
 
-        if self.config.layer_idx is not None:
-            target_layer = int(self.config.layer_idx)
-            if target_layer < 0:
-                raise IndexError(
-                    f"layer_idx must be non-negative. Got {target_layer}."
-                )
-            if target_layer >= len(mlp_modules):
-                raise IndexError(
-                    f"layer_idx={target_layer} is outside model layers "
-                    f"0..{len(mlp_modules) - 1}."
-                )
-            if target_layer >= self.autoencoder.n_layers:
-                raise IndexError(
-                    f"layer_idx={target_layer} is outside CLT layers "
-                    f"0..{self.autoencoder.n_layers - 1}."
-                )
-            max_layer = min(
-                target_layer + 1,
-                len(mlp_modules),
-                self.autoencoder.n_layers,
-            )
-            layer_indices = list(range(max_layer))
-        else:
-            layer_indices = list(range(min(len(mlp_modules), self.autoencoder.n_layers)))
+        layer_indices = self._validate_replacement_layers(mlp_modules)
 
         for layer_idx in layer_indices:
             handle = mlp_modules[layer_idx].register_forward_hook(

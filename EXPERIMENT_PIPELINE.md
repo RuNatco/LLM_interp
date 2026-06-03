@@ -15,6 +15,15 @@ pip install -r requirements.txt -c constraints.txt
 pip install -e .
 ```
 
+In managed notebook environments, do not prepend `site-packages` to
+`PYTHONPATH`. The scripts already prefer the local `src` directory.
+
+Optional Hugging Face cache variable:
+
+```bash
+export HF_HOME=.cache/huggingface
+```
+
 ## 1. Base CLT
 
 Train CLT:
@@ -73,7 +82,9 @@ python scripts/04_run_feature_interventions.py \
   --layer 20 \
   --pos 9 \
   --feature 126 \
-  --value 0.0
+  --value 0.0 \
+  --positive " increase" \
+  --negative " decrease"
 ```
 
 ## 2. Instruct CLT
@@ -134,7 +145,9 @@ python scripts/04_run_feature_interventions.py \
   --layer 23 \
   --pos 9 \
   --feature 80 \
-  --value 0.0
+  --value 0.0 \
+  --positive " increase" \
+  --negative " decrease"
 ```
 
 ## 3. What to inspect
@@ -153,6 +166,20 @@ cat outputs/base_clt_v0/replacement_eval_metrics.json
 cat outputs/instruct_clt_v0/replacement_eval_metrics.json
 ```
 
+Inspect these first:
+
+```text
+metrics.last_token_top1_agreement
+metrics.last_token_kl_div
+metrics.target_logit_diff_mae
+diagnostics.layer_*
+diagnostics.prefix_0_to_*
+```
+
+If full replacement is poor but single-layer replacement is acceptable, use
+single-layer causal analysis first. If prefix metrics collapse after a specific
+layer, inspect that layer's reconstruction NMSE and consider more CLT capacity.
+
 Causal validation:
 
 ```bash
@@ -165,4 +192,5 @@ Key interpretation rule:
 ```text
 proxy graph edges are hypotheses.
 validated causal effect = logit_diff(intervened_logits) - logit_diff(replacement_logits).
+use proxy_causal_pearson and ablation_sign_match_rate to judge graph reliability.
 ```

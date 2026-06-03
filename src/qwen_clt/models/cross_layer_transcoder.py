@@ -42,6 +42,11 @@ class CrossLayerTranscoder(nn.Module):
                     torch.empty(self.features_per_layer, self.d_model)
                 )
 
+        self.decoder_bias = nn.ParameterList([
+            nn.Parameter(torch.zeros(self.d_model))
+            for _ in range(self.n_layers)
+        ])
+
         self.thresholds = nn.Parameter(
             torch.full((self.n_layers, self.features_per_layer), float(init_threshold))
         )
@@ -67,10 +72,20 @@ class CrossLayerTranscoder(nn.Module):
         for layer_idx, x in enumerate(mlp_inputs):
             features_by_layer.append(self.encode_layer(x, layer_idx))
 
-        mlp_recons = [torch.zeros_like(mlp_inputs[tgt]) for tgt in range(self.n_layers)]
+        mlp_recons = []
+        for tgt in range(self.n_layers):
+            bias = self.decoder_bias[tgt].to(
+                device=mlp_inputs[tgt].device,
+                dtype=mlp_inputs[tgt].dtype,
+            )
+            mlp_recons.append(bias.view(1, 1, -1).expand_as(mlp_inputs[tgt]).clone())
+
         for src, a in enumerate(features_by_layer):
             for tgt in range(src, self.n_layers):
-                W = self.decoders[f"{src}->{tgt}"].to(a.dtype)
+                W = self.decoders[f"{src}->{tgt}"].to(
+                    device=a.device,
+                    dtype=a.dtype,
+                )
                 mlp_recons[tgt] = mlp_recons[tgt] + a @ W
         return features_by_layer, mlp_recons
 

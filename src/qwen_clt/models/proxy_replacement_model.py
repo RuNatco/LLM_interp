@@ -33,7 +33,7 @@ class ProxyQwenReplacementModel:
 
     @classmethod
     def from_checkpoint(cls, checkpoint_path: str, cfg: dict | None = None):
-        ckpt = torch.load(checkpoint_path, map_location="cpu")
+        ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         cfg = cfg or ckpt["cfg"]
         base_model, tokenizer = load_qwen_model_and_tokenizer(cfg)
         clt_cfg = cfg["clt"]
@@ -44,7 +44,18 @@ class ProxyQwenReplacementModel:
             init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
             decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
         ).to(next(base_model.parameters()).device)
-        clt.load_state_dict(ckpt["model_state_dict"])
+        missing_keys, unexpected_keys = clt.load_state_dict(
+            ckpt["model_state_dict"],
+            strict=False,
+        )
+        if missing_keys:
+            print("[proxy loader warning] Missing CLT keys:")
+            for key in missing_keys:
+                print(f"  - {key}")
+        if unexpected_keys:
+            print("[proxy loader warning] Unexpected CLT keys:")
+            for key in unexpected_keys:
+                print(f"  - {key}")
         clt.eval()
         return cls(base_model, tokenizer, clt, cfg)
 

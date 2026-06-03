@@ -25,7 +25,7 @@ data:
 clt:
   n_layers: 24
   d_model: 896
-  features_per_layer: 128
+  features_per_layer: 256
   input_kind: mlp_normed_input
   nonlinearity: jumprelu
   init_threshold: 0.0
@@ -36,15 +36,15 @@ training:
   gradient_accumulation_steps: 8
   lr: 0.0003
   weight_decay: 0.0
-  lambda_sparsity: 0.0001
+  lambda_sparsity: 0.00005
   sparsity_c: 1.0
-  max_steps: 1000
+  max_optimizer_steps: 1500
   log_every: 25
   eval_every: 250
   save_every: 500
   grad_clip_norm: 1.0
   seed: 42
-  
+
 replacement:
   enabled: true
   checkpoint_path: outputs/instruct_clt_v0/clt_final.pt
@@ -63,4 +63,17 @@ replacement_eval:
     - logit_mse
     - top1_agreement
     - mean_abs_logit_diff
+    - last_token_kl_div
+    - last_token_top1_agreement
+  target_logit_diff:
+    positive: " increase"
+    negative: " decrease"
+    target_pos: -1
+  diagnostics:
+    enabled: true
+    max_eval_tokens: 5000
+    layerwise: true
+    layer_stride: 1
+    prefix: true
+    prefix_stride: 1
   save_batch_metrics: true

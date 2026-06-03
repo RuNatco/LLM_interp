@@ -58,6 +58,9 @@ scripts/
 `src/qwen_clt/replacement/` — hook-based replacement path. Он используется для
 оценки replacement logits внутри настоящего forward pass: KL, logit MSE,
 top-1 agreement и другие метрики из `scripts/02_eval_replacement_model.py`.
+Метрики считаются по attention mask, поэтому padding не загрязняет результат.
+JSON дополнительно сохраняет last-token метрики и, если задано в YAML,
+target logit-difference fidelity.
 Хук ставится на `layer.mlp`: он читает `mlp_normed_input` из `inputs[0]` и
 заменяет `mlp_output` реконструкцией CLT. Это соответствует тому, как CLT
 обучается в `QwenMLPHookCollector`.
@@ -90,7 +93,9 @@ layernorm/error nodes и ошибки replacement model. Поэтому граф
 ## Causal validation
 
 `scripts/06_validate_attribution_graph.py` проверяет top-k узлов proxy graph
-через in-forward feature ablation. Для каждого узла скрипт считает:
+через in-forward feature ablation. Для каждого узла скрипт сохраняет значение
+feature до/после intervention, proxy causal estimate и фактический causal
+effect:
 
 ```text
 causal_effect =
@@ -112,6 +117,27 @@ python scripts/06_validate_attribution_graph.py \
 
 Если proxy score положительный, то при ablation ожидается отрицательный
 `causal_effect`: feature поддерживала target direction, а зануление её ослабило.
+В summary отчёта также есть `proxy_causal_pearson`,
+`ablation_sign_match_rate` и средняя абсолютная proxy/causal ошибка.
+
+## Training budget
+
+Основные YAML используют `training.max_optimizer_steps`, а не старый
+`max_steps`. При `gradient_accumulation_steps: 8` это означает, что один
+optimizer step соответствует восьми micro-batches. Старый `max_steps` всё ещё
+поддерживается как legacy micro-batch limit, но новые эксперименты лучше
+задавать через `max_optimizer_steps`.
+
+Текущие baseline-конфиги выровнены для честного сравнения base/instruct:
+
+```text
+features_per_layer: 256
+lambda_sparsity: 0.00005
+max_optimizer_steps: 1500
+```
+
+Если replacement fidelity всё ещё низкая, следующий дорогой прогон стоит
+делать с `features_per_layer: 512` и `max_optimizer_steps: 3000`.
 
 ## Установка
 
@@ -139,9 +165,11 @@ python scripts/01_train_clt.py --config configs/qwen2_5_0_5b_instruct_clt_v0.yam
 1. Сначала запускается `base`.
 2. Проверяется, что CLT обучается: падает NMSE, L0 не схлопывается в 0 и не становится слишком большим.
 3. Затем тот же pipeline запускается на `instruct`.
-4. После обучения строится replacement model.
-5. Для нескольких prompt-задач строятся attribution graphs.
-6. Top features проверяются через ablation/steering.
+4. После обучения оценивается replacement fidelity: особенно
+   `last_token_top1_agreement`, `last_token_kl_div` и target logit-difference.
+5. Layerwise/prefix diagnostics показывают, какие слои ломают full replacement.
+6. Для нескольких prompt-задач строятся attribution graphs.
+7. Top features проверяются через ablation/steering.
 
 Полный набор команд для последовательного запуска описан в
 `EXPERIMENT_PIPELINE.md`.

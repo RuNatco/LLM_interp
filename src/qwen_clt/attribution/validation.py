@@ -40,15 +40,19 @@ def select_top_node_indices(
     graph_payload: dict[str, Any],
     target_index: int = 0,
     top_k: int = 24,
+    min_activation: float = 0.0,
 ) -> list[int]:
     if top_k <= 0:
         return []
 
     nodes = graph_payload["nodes"]
-    scored = [
-        (idx, abs(proxy_effect(graph_payload, idx, target_index)))
-        for idx in range(len(nodes))
-    ]
+    scored = []
+    for idx, node in enumerate(nodes):
+        activation = abs(float(node.get("activation", 0.0)))
+        if activation < min_activation:
+            continue
+        scored.append((idx, abs(proxy_effect(graph_payload, idx, target_index))))
+
     scored.sort(key=lambda item: item[1], reverse=True)
     return [idx for idx, _ in scored[:top_k]]
 
@@ -101,3 +105,45 @@ def ablation_matches_proxy_sign(
     return (proxy_score > 0 and causal_effect < 0) or (
         proxy_score < 0 and causal_effect > 0
     )
+
+
+def feature_value(
+    features_by_layer: list[torch.Tensor | None],
+    layer: int,
+    pos: int,
+    feature_idx: int,
+) -> float | None:
+    if layer < 0 or layer >= len(features_by_layer):
+        return None
+
+    features = features_by_layer[layer]
+    if features is None:
+        return None
+
+    resolved_pos = resolve_position(pos, features.shape[1])
+    return float(features[0, resolved_pos, feature_idx].detach().float().item())
+
+
+def pearson_correlation(xs: list[float], ys: list[float]) -> float | None:
+    if len(xs) != len(ys):
+        raise ValueError("xs and ys must have the same length.")
+    if len(xs) < 2:
+        return None
+
+    x = torch.tensor(xs, dtype=torch.float32)
+    y = torch.tensor(ys, dtype=torch.float32)
+    x = x - x.mean()
+    y = y - y.mean()
+    denom = x.norm() * y.norm()
+
+    if float(denom.item()) == 0.0:
+        return None
+
+    return float((x @ y / denom).item())
+
+
+def sign_match_rate(values: list[bool | None]) -> float | None:
+    resolved = [item for item in values if item is not None]
+    if not resolved:
+        return None
+    return float(sum(1 for item in resolved if item) / len(resolved))

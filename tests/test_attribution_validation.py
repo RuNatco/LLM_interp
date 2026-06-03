@@ -2,15 +2,22 @@ import torch
 
 from qwen_clt.attribution.validation import (
     ablation_matches_proxy_sign,
+    feature_value,
     logit_difference_score,
+    pearson_correlation,
     proxy_effect,
     select_top_node_indices,
+    sign_match_rate,
 )
 
 
 def test_select_top_node_indices_uses_abs_proxy_effect():
     graph_payload = {
-        "nodes": [{}, {}, {}],
+        "nodes": [
+            {"activation": 1.0},
+            {"activation": 1.0},
+            {"activation": 1.0},
+        ],
         "targets": [{"name": "target"}],
         "adjacency_matrix": [[0.1, -0.7, 0.4]],
     }
@@ -47,3 +54,34 @@ def test_ablation_sign_match_is_opposite_to_proxy_sign():
     assert ablation_matches_proxy_sign(proxy_score=2.0, causal_effect=-0.5) is True
     assert ablation_matches_proxy_sign(proxy_score=2.0, causal_effect=0.5) is False
     assert ablation_matches_proxy_sign(proxy_score=0.0, causal_effect=0.5) is None
+
+
+def test_select_top_node_indices_filters_small_activations():
+    graph_payload = {
+        "nodes": [
+            {"activation": 0.0},
+            {"activation": 0.5},
+        ],
+        "targets": [{"name": "target"}],
+        "adjacency_matrix": [[10.0, 1.0]],
+    }
+
+    assert select_top_node_indices(
+        graph_payload,
+        top_k=2,
+        min_activation=1e-6,
+    ) == [1]
+
+
+def test_feature_value_resolves_negative_positions():
+    features = [torch.zeros(1, 3, 2)]
+    features[0][0, 2, 1] = 4.0
+
+    assert feature_value(features, layer=0, pos=-1, feature_idx=1) == 4.0
+
+
+def test_validation_summary_helpers():
+    corr = pearson_correlation([1.0, 2.0, 3.0], [2.0, 4.0, 6.0])
+    assert corr is not None
+    assert abs(corr - 1.0) < 1e-6
+    assert sign_match_rate([True, False, None]) == 0.5

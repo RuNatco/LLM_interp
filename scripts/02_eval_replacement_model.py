@@ -181,13 +181,12 @@ def load_eval_texts(
 
 
 @torch.no_grad()
-def run_model_logits(
-    model,
+def encode_texts(
     tokenizer,
     texts: list[str],
     device: str,
     seq_len: int,
-) -> torch.Tensor:
+) -> dict[str, torch.Tensor]:
     encoded = tokenizer(
         texts,
         padding=True,
@@ -196,24 +195,207 @@ def run_model_logits(
         return_tensors="pt",
     )
 
-    encoded = {k: v.to(device) for k, v in encoded.items()}
+    return {k: v.to(device) for k, v in encoded.items()}
 
+
+@torch.no_grad()
+def run_model_logits(
+    model,
+    encoded: dict[str, torch.Tensor],
+) -> torch.Tensor:
     outputs = model(**encoded)
 
     return outputs.logits.detach().cpu()
 
 
-def aggregate_batch_metrics(batch_metrics: list[dict[str, float]]) -> dict[str, float]:
+def single_token_id(tokenizer, text: str) -> int:
+    token_ids = tokenizer.encode(text, add_special_tokens=False)
+    if len(token_ids) != 1:
+        raise ValueError(
+            f"Expected a single-token string, got {text!r} -> {token_ids}"
+        )
+    return int(token_ids[0])
+
+
+def target_token_ids_from_config(
+    tokenizer,
+    eval_cfg: dict[str, Any],
+) -> tuple[tuple[int, int] | None, dict[str, Any] | None]:
+    target_cfg = eval_cfg.get("target_logit_diff")
+    if not target_cfg:
+        return None, None
+
+    positive = str(target_cfg["positive"])
+    negative = str(target_cfg["negative"])
+    positive_id = single_token_id(tokenizer, positive)
+    negative_id = single_token_id(tokenizer, negative)
+
+    metadata = {
+        "positive": positive,
+        "negative": negative,
+        "positive_token_id": positive_id,
+        "negative_token_id": negative_id,
+        "target_pos": int(target_cfg.get("target_pos", -1)),
+        "score": "logit(positive)-logit(negative)",
+    }
+
+    return (positive_id, negative_id), metadata
+
+
+def _metric_weight_key(metric_name: str) -> str:
+    if metric_name.startswith("last_token_"):
+        return "num_sequences"
+    if metric_name.startswith("target_logit_diff_"):
+        return "num_sequences"
+    return "num_tokens"
+
+
+def aggregate_batch_metrics(
+    batch_metrics: list[dict[str, float | int]],
+) -> dict[str, float | int]:
     if len(batch_metrics) == 0:
         raise ValueError("No batch metrics to aggregate.")
 
-    result: dict[str, float] = {}
+    result: dict[str, float | int] = {}
+    metric_names = sorted({key for metrics in batch_metrics for key in metrics})
 
-    for key in batch_metrics[0].keys():
-        values = [float(m[key]) for m in batch_metrics]
-        result[key] = float(sum(values) / len(values))
+    for key in metric_names:
+        if key in {"num_tokens", "num_sequences"}:
+            result[key] = int(sum(int(m.get(key, 0)) for m in batch_metrics))
+            continue
+
+        weight_key = _metric_weight_key(key)
+        weighted_sum = 0.0
+        total_weight = 0.0
+
+        for metrics in batch_metrics:
+            if key not in metrics:
+                continue
+            weight = float(metrics.get(weight_key, 1.0))
+            weighted_sum += float(metrics[key]) * weight
+            total_weight += weight
+
+        if total_weight > 0.0:
+            result[key] = weighted_sum / total_weight
 
     return result
+
+
+def make_replacement_config(
+    replacement_cfg: dict[str, Any],
+    clt_cfg: dict[str, Any],
+    *,
+    layer_idx: int | None = None,
+    replacement_layers: tuple[int, ...] | None = None,
+) -> ReplacementConfig:
+    return ReplacementConfig(
+        layer_idx=layer_idx,
+        replacement_layers=replacement_layers,
+        read_from=replacement_cfg.get("read_from", clt_cfg.get("input_kind")),
+        replace_at=replacement_cfg.get("replace_at", "mlp_output"),
+        replace_mode=replacement_cfg.get("replace_mode", "full"),
+        detach_reconstruction=bool(replacement_cfg.get("detach_reconstruction", False)),
+    )
+
+
+@torch.no_grad()
+def evaluate_replacement(
+    *,
+    model,
+    tokenizer,
+    autoencoder,
+    eval_texts: list[str],
+    replacement_config: ReplacementConfig,
+    device: str,
+    seq_len: int,
+    batch_size_sequences: int,
+    desc: str,
+    target_token_ids: tuple[int, int] | None,
+    target_pos: int,
+) -> tuple[dict[str, float | int], list[dict[str, float | int]]]:
+    batch_metrics: list[dict[str, float | int]] = []
+    num_batches = math.ceil(len(eval_texts) / batch_size_sequences)
+
+    for texts in tqdm(
+        batch_iter(eval_texts, batch_size_sequences),
+        total=num_batches,
+        desc=desc,
+    ):
+        encoded = encode_texts(
+            tokenizer=tokenizer,
+            texts=texts,
+            device=device,
+            seq_len=seq_len,
+        )
+        attention_mask = encoded.get("attention_mask")
+        attention_mask_cpu = (
+            attention_mask.detach().cpu() if attention_mask is not None else None
+        )
+
+        original_logits = run_model_logits(
+            model=model,
+            encoded=encoded,
+        )
+
+        with LayerReplacementHook(
+            model=model,
+            autoencoder=autoencoder,
+            config=replacement_config,
+        ):
+            replacement_logits = run_model_logits(
+                model=model,
+                encoded=encoded,
+            )
+
+        metrics = compute_replacement_metrics(
+            original_logits=original_logits,
+            replacement_logits=replacement_logits,
+            attention_mask=attention_mask_cpu,
+            target_token_ids=target_token_ids,
+            target_pos=target_pos,
+        )
+
+        batch_metrics.append(metrics_to_dict(metrics))
+
+    return aggregate_batch_metrics(batch_metrics), batch_metrics
+
+
+def diagnostic_modes(
+    diagnostics_cfg: dict[str, Any],
+    n_layers: int,
+) -> list[tuple[str, dict[str, Any]]]:
+    if not bool(diagnostics_cfg.get("enabled", False)):
+        return []
+
+    modes: list[tuple[str, dict[str, Any]]] = []
+
+    if bool(diagnostics_cfg.get("layerwise", True)):
+        stride = int(diagnostics_cfg.get("layer_stride", 1))
+        for layer_idx in range(0, n_layers, stride):
+            modes.append(
+                (
+                    f"layer_{layer_idx}",
+                    {
+                        "kind": "single_layer",
+                        "layer_idx": layer_idx,
+                    },
+                )
+            )
+
+    if bool(diagnostics_cfg.get("prefix", True)):
+        stride = int(diagnostics_cfg.get("prefix_stride", 1))
+        for layer_idx in range(0, n_layers, stride):
+            modes.append(
+                (
+                    f"prefix_0_to_{layer_idx}",
+                    {
+                        "kind": "prefix",
+                        "replacement_layers": tuple(range(layer_idx + 1)),
+                    },
+                )
+            )
+
+    return modes
 
 
 def validate_config(cfg: dict[str, Any]) -> None:
@@ -357,52 +539,97 @@ def main() -> None:
 
     print(f"Loaded eval sequences: {len(eval_texts)}")
 
-    replacement_config = ReplacementConfig(
-        layer_idx=None,
-        read_from=replacement_cfg.get("read_from", clt_cfg.get("input_kind")),
-        replace_at=replacement_cfg.get("replace_at", "mlp_output"),
-        replace_mode=replacement_cfg.get("replace_mode", "full"),
-        detach_reconstruction=bool(replacement_cfg.get("detach_reconstruction", False)),
+    target_token_ids, target_metadata = target_token_ids_from_config(
+        tokenizer=tokenizer,
+        eval_cfg=eval_cfg,
+    )
+    target_pos = (
+        int(target_metadata["target_pos"])
+        if target_metadata is not None
+        else -1
     )
 
-    batch_metrics: list[dict[str, float]] = []
+    replacement_config = make_replacement_config(
+        replacement_cfg=replacement_cfg,
+        clt_cfg=clt_cfg,
+    )
 
-    num_batches = math.ceil(len(eval_texts) / batch_size_sequences)
+    aggregated_metrics, batch_metrics = evaluate_replacement(
+        model=model,
+        tokenizer=tokenizer,
+        autoencoder=autoencoder,
+        eval_texts=eval_texts,
+        replacement_config=replacement_config,
+        device=device,
+        seq_len=seq_len,
+        batch_size_sequences=batch_size_sequences,
+        desc="Evaluating full replacement",
+        target_token_ids=target_token_ids,
+        target_pos=target_pos,
+    )
 
-    for texts in tqdm(
-        batch_iter(eval_texts, batch_size_sequences),
-        total=num_batches,
-        desc="Evaluating replacement",
+    diagnostics_cfg = eval_cfg.get("diagnostics", {})
+    diagnostics: dict[str, Any] = {}
+    diagnostics_texts: list[str] | None = None
+    diagnostics_max_eval_tokens = int(
+        diagnostics_cfg.get("max_eval_tokens", min(max_eval_tokens, 5000))
+    )
+
+    for mode_name, mode_cfg in diagnostic_modes(
+        diagnostics_cfg=diagnostics_cfg,
+        n_layers=autoencoder.n_layers,
     ):
-        original_logits = run_model_logits(
+        if diagnostics_texts is None:
+            diagnostics_texts = load_eval_texts(
+                cfg=cfg,
+                tokenizer=tokenizer,
+                max_eval_tokens=diagnostics_max_eval_tokens,
+            )
+            print(f"Loaded diagnostic eval sequences: {len(diagnostics_texts)}")
+
+        if mode_cfg["kind"] == "single_layer":
+            diagnostic_config = make_replacement_config(
+                replacement_cfg=replacement_cfg,
+                clt_cfg=clt_cfg,
+                layer_idx=int(mode_cfg["layer_idx"]),
+            )
+        elif mode_cfg["kind"] == "prefix":
+            diagnostic_config = make_replacement_config(
+                replacement_cfg=replacement_cfg,
+                clt_cfg=clt_cfg,
+                replacement_layers=mode_cfg["replacement_layers"],
+            )
+        else:
+            raise ValueError(f"Unknown diagnostic kind: {mode_cfg['kind']}")
+
+        diagnostic_metrics, _ = evaluate_replacement(
             model=model,
             tokenizer=tokenizer,
-            texts=texts,
+            autoencoder=autoencoder,
+            eval_texts=diagnostics_texts,
+            replacement_config=diagnostic_config,
             device=device,
             seq_len=seq_len,
+            batch_size_sequences=batch_size_sequences,
+            desc=f"Diagnostic {mode_name}",
+            target_token_ids=target_token_ids,
+            target_pos=target_pos,
         )
 
-        with LayerReplacementHook(
-            model=model,
-            autoencoder=autoencoder,
-            config=replacement_config,
-        ):
-            replacement_logits = run_model_logits(
-                model=model,
-                tokenizer=tokenizer,
-                texts=texts,
-                device=device,
-                seq_len=seq_len,
-            )
-
-        metrics = compute_replacement_metrics(
-            original_logits=original_logits,
-            replacement_logits=replacement_logits,
-        )
-
-        batch_metrics.append(metrics_to_dict(metrics))
-
-    aggregated_metrics = aggregate_batch_metrics(batch_metrics)
+        diagnostics[mode_name] = {
+            "config": {
+                key: value
+                for key, value in mode_cfg.items()
+                if key != "replacement_layers"
+            },
+            "replacement_layers": (
+                list(mode_cfg["replacement_layers"])
+                if "replacement_layers" in mode_cfg
+                else None
+            ),
+            "max_eval_tokens": diagnostics_max_eval_tokens,
+            "metrics": diagnostic_metrics,
+        }
 
     result: dict[str, Any] = {
         "project": project_name,
@@ -423,6 +650,7 @@ def main() -> None:
             "batch_size_sequences": batch_size_sequences,
             "num_eval_sequences": len(eval_texts),
         },
+        "target_logit_diff": target_metadata,
         "clt": {
             "n_layers": clt_cfg.get("n_layers"),
             "d_model": clt_cfg.get("d_model"),
@@ -436,12 +664,29 @@ def main() -> None:
     if bool(eval_cfg.get("save_batch_metrics", True)):
         result["batch_metrics"] = batch_metrics
 
+    if diagnostics:
+        result["diagnostics"] = diagnostics
+
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
 
     print("\nReplacement metrics:")
     for key, value in aggregated_metrics.items():
-        print(f"{key}: {value:.6f}")
+        if isinstance(value, int):
+            print(f"{key}: {value}")
+        else:
+            print(f"{key}: {value:.6f}")
+
+    if diagnostics:
+        print("\nDiagnostics:")
+        for mode_name, payload in diagnostics.items():
+            mode_metrics = payload["metrics"]
+            print(
+                f"{mode_name}: "
+                f"last_top1={mode_metrics.get('last_token_top1_agreement', 0.0):.4f} "
+                f"last_kl={mode_metrics.get('last_token_kl_div', 0.0):.4f} "
+                f"top1={mode_metrics.get('top1_agreement', 0.0):.4f}"
+            )
 
     print(f"\nSaved to: {output_path}")
 
