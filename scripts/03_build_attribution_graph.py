@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+
+import _path_setup  # noqa: F401
+
 from qwen_clt.models.proxy_replacement_model import ProxyQwenReplacementModel
 from qwen_clt.attribution.targets import logit_difference_target
 from qwen_clt.attribution.attribute import build_feature_to_target_graph

@@ -7,6 +7,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+import _path_setup  # noqa: F401
+
 import torch
 from tqdm import tqdm
 from datasets import load_dataset

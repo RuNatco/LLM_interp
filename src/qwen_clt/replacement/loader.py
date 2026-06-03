@@ -14,7 +14,7 @@ def load_checkpoint(path: str | Path, map_location: str = "cpu") -> dict[str, An
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
 
-    checkpoint = torch.load(path, map_location=map_location)
+    checkpoint = torch.load(path, map_location=map_location, weights_only=True)
 
     if not isinstance(checkpoint, dict):
         raise TypeError(

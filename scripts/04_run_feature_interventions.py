@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import argparse
+
+import _path_setup  # noqa: F401
+
 import torch
 import torch.nn.functional as F
 

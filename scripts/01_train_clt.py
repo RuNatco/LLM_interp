@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import argparse
+
+import _path_setup  # noqa: F401
+
 from qwen_clt.utils.config import load_config
 from qwen_clt.training.train_clt import train_clt
 

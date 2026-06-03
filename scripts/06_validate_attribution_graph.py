@@ -5,6 +5,8 @@ import argparse
 import json
 from pathlib import Path
 
+import _path_setup  # noqa: F401
+
 from tqdm import tqdm
 
 from qwen_clt.attribution.validation import (
