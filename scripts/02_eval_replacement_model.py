@@ -66,10 +66,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_path(path: str | Path) -> Path:
-    return Path(path).expanduser().resolve()
-
-
 def ensure_parent_dir(path: str | Path) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -291,16 +287,16 @@ def main() -> None:
         else int(eval_cfg.get("batch_size_sequences", 2))
     )
 
-    checkpoint_path = (
-        resolve_path(args.checkpoint)
+    checkpoint_path = Path(
+        args.checkpoint
         if args.checkpoint is not None
-        else resolve_path(replacement_cfg["checkpoint_path"])
+        else replacement_cfg["checkpoint_path"]
     )
 
-    output_path = (
-        resolve_path(args.output)
+    output_path = Path(
+        args.output
         if args.output is not None
-        else resolve_path(eval_cfg["output_path"])
+        else eval_cfg["output_path"]
     )
 
     ensure_parent_dir(output_path)
@@ -309,7 +305,7 @@ def main() -> None:
     print("Replacement model evaluation")
     print("=" * 80)
     print(f"Project: {project_name}")
-    print(f"Config: {resolve_path(args.config)}")
+    print(f"Config: {args.config}")
     print(f"Model: {model_name}")
     print(f"Device: {device}")
     print(f"Dtype: {dtype}")
@@ -408,7 +404,7 @@ def main() -> None:
 
     result: dict[str, Any] = {
         "project": project_name,
-        "config_path": str(resolve_path(args.config)),
+        "config_path": args.config,
         "model_name": model_name,
         "checkpoint_path": str(checkpoint_path),
         "replacement": {
