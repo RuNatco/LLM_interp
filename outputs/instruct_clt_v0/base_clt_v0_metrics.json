@@ -1,0 +1,38 @@
+{
+  "project": "qwen2_5_0_5b_instruct_clt_v0",
+  "config_path": "/home/jupyter/project/qwen_clt_circuit_baseline/configs/qwen2_5_0_5b_instruct_clt_v0.yaml",
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "checkpoint_path": "/home/jupyter/project/qwen_clt_circuit_baseline/outputs/instruct_clt_v0/clt_final.pt",
+  "replacement": {
+    "replace_at": "mlp_normed_input",
+    "replace_mode": "full",
+    "detach_reconstruction": false
+  },
+  "eval": {
+    "seq_len": 128,
+    "max_eval_tokens": 64,
+    "batch_size_sequences": 2,
+    "num_eval_sequences": 2
+  },
+  "clt": {
+    "n_layers": 24,
+    "d_model": 896,
+    "features_per_layer": 128,
+    "input_kind": "mlp_normed_input",
+    "nonlinearity": "jumprelu"
+  },
+  "metrics": {
+    "kl_div": 1165.636474609375,
+    "logit_mse": 15.681717872619629,
+    "top1_agreement": 0.00390625,
+    "mean_abs_logit_diff": 3.118699312210083
+  },
+  "batch_metrics": [
+    {
+      "kl_div": 1165.636474609375,
+      "logit_mse": 15.681717872619629,
+      "top1_agreement": 0.00390625,
+      "mean_abs_logit_diff": 3.118699312210083
+    }
+  ]
+}

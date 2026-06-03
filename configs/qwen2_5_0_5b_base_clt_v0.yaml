@@ -1,0 +1,64 @@
+project:
+  name: qwen2_5_0_5b_base_clt_v0
+  output_dir: outputs/base_clt_v0
+
+model:
+  name: Qwen/Qwen2.5-0.5B
+  dtype: bfloat16
+  device: cuda
+  trust_remote_code: true
+  use_cache: false
+  chat_template: false
+
+data:
+  dataset_name: wikitext
+  dataset_config: wikitext-103-raw-v1
+  text_field: text
+  split: train
+  seq_len: 128
+  max_train_tokens: 2000000
+  max_eval_tokens: 200000
+
+clt:
+  n_layers: 24
+  d_model: 896
+  features_per_layer: 128
+  input_kind: mlp_normed_input
+  nonlinearity: jumprelu
+  init_threshold: 0.0
+  decoder_init_scale: 0.02
+
+training:
+  batch_size_sequences: 2
+  gradient_accumulation_steps: 8
+  lr: 0.0003
+  weight_decay: 0.0
+  lambda_sparsity: 0.00005
+  sparsity_c: 1.0
+  max_steps: 3000
+  log_every: 25
+  eval_every: 250
+  save_every: 500
+  grad_clip_norm: 1.0
+  seed: 42
+
+
+replacement:
+  enabled: true
+  checkpoint_path: outputs/base_clt_v0/clt_final.pt
+  read_from: mlp_normed_input
+  replace_at: mlp_output
+  replace_mode: full
+  detach_reconstruction: false
+
+replacement_eval:
+  enabled: true
+  max_eval_tokens: 50000
+  batch_size_sequences: 2
+  output_path: outputs/base_clt_v0/replacement_eval_metrics.json
+  metrics:
+    - kl_div
+    - logit_mse
+    - top1_agreement
+    - mean_abs_logit_diff
+  save_batch_metrics: true
