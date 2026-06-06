@@ -137,8 +137,17 @@ def build_feature_to_target_graph(
             # nodes, so it is a proxy rather than full circuit-tracer attribution.
             write = torch.zeros_like(vec)
             for tgt in range(node.layer, replacement_model.clt.n_layers):
-                W = replacement_model.clt.decoders[f"{node.layer}->{tgt}"]
-                write = write + W[node.feature_idx].detach().float().to(vec.device)
+                if hasattr(replacement_model.clt, "decoder_row_for_raw_output"):
+                    row = replacement_model.clt.decoder_row_for_raw_output(
+                        node.layer,
+                        tgt,
+                        node.feature_idx,
+                    )
+                else:
+                    W = replacement_model.clt.decoders[f"{node.layer}->{tgt}"]
+                    row = W[node.feature_idx]
+
+                write = write + row.detach().float().to(vec.device)
 
             effects.append(float(node.activation) * float(torch.dot(write, vec).item()))
 

@@ -169,6 +169,9 @@ class LayerReplacementHook:
         mlp_input: torch.Tensor,
         src: int,
     ) -> torch.Tensor:
+        if hasattr(self.autoencoder, "normalize_input"):
+            mlp_input = self.autoencoder.normalize_input(mlp_input, src)
+
         encoder = self.autoencoder.encoders[src].to(
             device=mlp_input.device,
             dtype=mlp_input.dtype,
@@ -186,6 +189,16 @@ class LayerReplacementHook:
         features = pre * (pre > threshold)
 
         return features
+
+    def _denormalize_target(
+        self,
+        reconstruction: torch.Tensor,
+        tgt: int,
+    ) -> torch.Tensor:
+        if hasattr(self.autoencoder, "denormalize_output"):
+            return self.autoencoder.denormalize_output(reconstruction, tgt)
+
+        return reconstruction
 
     def _apply_feature_interventions(
         self,
@@ -300,7 +313,7 @@ class LayerReplacementHook:
 
             reconstruction = reconstruction + contribution
 
-        return reconstruction
+        return self._denormalize_target(reconstruction, tgt)
 
     def _make_hook_fn(self, layer_idx: int):
         def hook_fn(module, inputs, output):

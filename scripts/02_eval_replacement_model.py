@@ -657,6 +657,7 @@ def main() -> None:
             "features_per_layer": clt_cfg.get("features_per_layer"),
             "input_kind": clt_cfg.get("input_kind"),
             "nonlinearity": clt_cfg.get("nonlinearity"),
+            "normalization": clt_cfg.get("normalization", {}),
         },
         "metrics": aggregated_metrics,
     }

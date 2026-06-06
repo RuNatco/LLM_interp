@@ -5,7 +5,10 @@ from typing import Any
 
 import torch
 
-from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
+from qwen_clt.models.cross_layer_transcoder import (
+    CrossLayerTranscoder,
+    clt_normalization_kwargs,
+)
 
 
 def load_checkpoint(path: str | Path, map_location: str = "cpu") -> dict[str, Any]:
@@ -91,6 +94,7 @@ def build_clt_from_checkpoint_cfg(
         features_per_layer=int(clt_cfg["features_per_layer"]),
         init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
         decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
+        **clt_normalization_kwargs(clt_cfg),
     )
 
     return model

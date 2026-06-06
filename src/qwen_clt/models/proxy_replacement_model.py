@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import torch
 
-from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
+from qwen_clt.models.cross_layer_transcoder import (
+    CrossLayerTranscoder,
+    clt_normalization_kwargs,
+)
 from qwen_clt.models.qwen_hooks import load_qwen_model_and_tokenizer, QwenMLPHookCollector
 from qwen_clt.interventions import FeatureIntervention
 from qwen_clt.replacement import LayerReplacementHook, ReplacementConfig
@@ -43,6 +46,7 @@ class ProxyQwenReplacementModel:
             features_per_layer=int(clt_cfg["features_per_layer"]),
             init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
             decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
+            **clt_normalization_kwargs(clt_cfg),
         ).to(next(base_model.parameters()).device)
         missing_keys, unexpected_keys = clt.load_state_dict(
             ckpt["model_state_dict"],

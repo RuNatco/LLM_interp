@@ -7,8 +7,16 @@ from tqdm import tqdm
 
 from qwen_clt.data.text_dataset import iter_token_batches
 from qwen_clt.models.qwen_hooks import load_qwen_model_and_tokenizer, QwenMLPHookCollector
-from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
-from qwen_clt.training.losses import reconstruction_loss, tanh_sparsity_loss
+from qwen_clt.models.cross_layer_transcoder import (
+    CrossLayerTranscoder,
+    clt_normalization_kwargs,
+)
+from qwen_clt.replacement import LayerReplacementHook, ReplacementConfig
+from qwen_clt.training.losses import (
+    last_token_logit_distillation_loss,
+    reconstruction_loss,
+    tanh_sparsity_loss,
+)
 from qwen_clt.training.metrics import summarize_metrics
 from qwen_clt.utils.seed import set_seed
 from qwen_clt.utils.io import save_checkpoint
@@ -43,6 +51,44 @@ def resolve_step_limits(training_cfg: dict, grad_accum: int) -> tuple[int, int |
     return max_optimizer_steps, max_micro_steps
 
 
+def _checkpoint_step(path: Path) -> int:
+    try:
+        return int(path.stem.split("_")[-1])
+    except ValueError:
+        return -1
+
+
+def prune_old_step_checkpoints(output_dir: Path, keep_last: int) -> None:
+    if keep_last <= 0:
+        return
+
+    checkpoints = sorted(
+        output_dir.glob("clt_step_*.pt"),
+        key=_checkpoint_step,
+    )
+    stale = checkpoints[:-keep_last]
+
+    for path in stale:
+        path.unlink()
+
+
+def should_run_logit_distillation(
+    distill_cfg: dict,
+    next_micro_step: int,
+) -> bool:
+    if not bool(distill_cfg.get("enabled", False)):
+        return False
+
+    every_n_micro_steps = int(distill_cfg.get("every_n_micro_steps", 1))
+    if every_n_micro_steps <= 0:
+        raise ValueError(
+            "training.logit_distillation.every_n_micro_steps must be positive. "
+            f"Got {every_n_micro_steps}."
+        )
+
+    return next_micro_step % every_n_micro_steps == 0
+
+
 def train_clt(cfg: dict) -> Path:
     seed = int(cfg["training"].get("seed", 42))
     set_seed(seed)
@@ -60,6 +106,7 @@ def train_clt(cfg: dict) -> Path:
         features_per_layer=int(clt_cfg["features_per_layer"]),
         init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
         decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
+        **clt_normalization_kwargs(clt_cfg),
     ).to(device)
 
     optimizer = torch.optim.AdamW(
@@ -80,9 +127,22 @@ def train_clt(cfg: dict) -> Path:
     )
     log_every = int(cfg["training"].get("log_every", 50))
     save_every = int(cfg["training"].get("save_every", 1000))
+    keep_last_checkpoints = int(cfg["training"].get("keep_last_checkpoints", 0))
     lambda_sparsity = float(cfg["training"].get("lambda_sparsity", 1e-4))
     sparsity_c = float(cfg["training"].get("sparsity_c", 1.0))
     grad_clip = float(cfg["training"].get("grad_clip_norm", 1.0))
+    distill_cfg = cfg["training"].get("logit_distillation", {}) or {}
+    lambda_logit_distillation = float(distill_cfg.get("weight", 0.0))
+
+    replacement_cfg = cfg.get("replacement", {})
+    replacement_config = ReplacementConfig(
+        read_from=replacement_cfg.get("read_from", clt_cfg.get("input_kind")),
+        replace_at=replacement_cfg.get("replace_at", "mlp_output"),
+        replace_mode=replacement_cfg.get("replace_mode", "full"),
+        detach_reconstruction=bool(
+            replacement_cfg.get("detach_reconstruction", False)
+        ),
+    )
 
     metrics_path = output_dir / "metrics.jsonl"
     micro_step = 0
@@ -98,10 +158,42 @@ def train_clt(cfg: dict) -> Path:
             with torch.no_grad():
                 acts = collector.run(batch.input_ids, batch.attention_mask)
 
-            features, recons = clt(acts.mlp_inputs)
+            next_micro_step = micro_step + 1
+
+            features, recons = clt(
+                acts.mlp_inputs,
+                mlp_targets=acts.mlp_outputs,
+                update_normalization_stats=True,
+            )
             rec_loss = reconstruction_loss(recons, acts.mlp_outputs)
             sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c)
             loss = rec_loss + lambda_sparsity * sp_loss
+            distill_loss = None
+
+            if should_run_logit_distillation(distill_cfg, next_micro_step):
+                with LayerReplacementHook(
+                    model=model,
+                    autoencoder=clt,
+                    config=replacement_config,
+                ):
+                    replacement_out = model(
+                        input_ids=batch.input_ids,
+                        attention_mask=batch.attention_mask,
+                    )
+
+                distill_loss = last_token_logit_distillation_loss(
+                    student_logits=replacement_out.logits,
+                    teacher_logits=acts.logits,
+                    attention_mask=batch.attention_mask,
+                    top_k=distill_cfg.get("top_k", 256),
+                    temperature=float(distill_cfg.get("temperature", 1.0)),
+                    normalize_logits=bool(
+                        distill_cfg.get("normalize_logits", True)
+                    ),
+                    loss_type=str(distill_cfg.get("loss_type", "centered_mse")),
+                )
+                loss = loss + lambda_logit_distillation * distill_loss
+
             (loss / grad_accum).backward()
 
             micro_step += 1
@@ -122,16 +214,28 @@ def train_clt(cfg: dict) -> Path:
                         "loss": float(loss.item()),
                         "reconstruction_loss": float(rec_loss.item()),
                         "sparsity_loss": float(sp_loss.item()),
+                        "logit_distillation_loss": (
+                            None
+                            if distill_loss is None
+                            else float(distill_loss.item())
+                        ),
                         **summary,
                     }
                     with metrics_path.open("a", encoding="utf-8") as f:
                         f.write(json.dumps(row, ensure_ascii=False) + "\n")
+                    distill_value = row["logit_distillation_loss"]
+                    distill_text = (
+                        "none"
+                        if distill_value is None
+                        else f"{float(distill_value):.4f}"
+                    )
                     tqdm.write(
                         "optimizer_step="
                         f"{optimizer_step} micro_step={micro_step} "
                         f"loss={row['loss']:.4f} "
                         f"nmse={row['nmse_mean']:.4f} "
-                        f"l0={row['l0_mean']:.2f}"
+                        f"l0={row['l0_mean']:.2f} "
+                        f"logit_distill={distill_text}"
                     )
 
                 if optimizer_step > 0 and optimizer_step % save_every == 0:
@@ -146,6 +250,7 @@ def train_clt(cfg: dict) -> Path:
                         },
                         ckpt_path,
                     )
+                    prune_old_step_checkpoints(output_dir, keep_last_checkpoints)
 
             if optimizer_step >= max_optimizer_steps:
                 break
