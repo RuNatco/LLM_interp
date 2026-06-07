@@ -63,8 +63,30 @@ class ProxyQwenReplacementModel:
         clt.eval()
         return cls(base_model, tokenizer, clt, cfg)
 
+    def format_prompt(self, prompt: str) -> str:
+        model_cfg = self.cfg.get("model", {})
+        if not bool(model_cfg.get("chat_template", False)):
+            return prompt
+
+        wrapper = self.cfg.get("data", {}).get("instruct_wrapper", {}) or {}
+        system = wrapper.get("system", "You are a helpful assistant.")
+        user_prefix = wrapper.get(
+            "user_prefix",
+            "Continue or answer the following text:",
+        )
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": f"{user_prefix}\n\n{prompt}"},
+        ]
+        return self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
     def tokenize(self, prompt: str):
-        toks = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+        formatted_prompt = self.format_prompt(prompt)
+        toks = self.tokenizer(formatted_prompt, return_tensors="pt").to(self.device)
         return toks["input_ids"], toks.get("attention_mask")
 
     @torch.no_grad()
