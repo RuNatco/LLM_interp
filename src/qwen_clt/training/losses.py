@@ -12,9 +12,33 @@ def normalized_mse(y_hat: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> t
     return mse / denom
 
 
-def reconstruction_loss(mlp_recons: list[torch.Tensor], mlp_targets: list[torch.Tensor]) -> torch.Tensor:
+def reconstruction_loss(
+    mlp_recons: list[torch.Tensor],
+    mlp_targets: list[torch.Tensor],
+    layer_weights: list[float] | torch.Tensor | None = None,
+) -> torch.Tensor:
     losses = [normalized_mse(y_hat, y) for y_hat, y in zip(mlp_recons, mlp_targets)]
-    return torch.stack(losses).mean()
+    loss_tensor = torch.stack(losses)
+
+    if layer_weights is None:
+        return loss_tensor.mean()
+
+    weights = torch.as_tensor(
+        layer_weights,
+        dtype=loss_tensor.dtype,
+        device=loss_tensor.device,
+    )
+    if weights.shape != loss_tensor.shape:
+        raise ValueError(
+            f"layer_weights shape {weights.shape} must match layer losses "
+            f"shape {loss_tensor.shape}."
+        )
+    if bool((weights < 0).any()):
+        raise ValueError("layer_weights must be non-negative.")
+    if float(weights.sum().item()) <= 0.0:
+        raise ValueError("At least one layer weight must be positive.")
+
+    return (loss_tensor * weights).sum() / weights.sum()
 
 
 def _last_token_positions(

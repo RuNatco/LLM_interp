@@ -89,6 +89,45 @@ def should_run_logit_distillation(
     return next_micro_step % every_n_micro_steps == 0
 
 
+def layer_loss_weights_from_config(
+    training_cfg: dict,
+    n_layers: int,
+) -> list[float] | None:
+    weights_cfg = training_cfg.get("layer_loss_weights")
+    if not weights_cfg:
+        return None
+
+    default_weight = float(weights_cfg.get("default", 1.0))
+    if default_weight < 0.0:
+        raise ValueError(
+            f"layer_loss_weights.default must be non-negative. Got {default_weight}."
+        )
+
+    weights = [default_weight for _ in range(n_layers)]
+    layer_overrides = weights_cfg.get("layers", {}) or {}
+
+    for raw_layer_idx, raw_weight in layer_overrides.items():
+        layer_idx = int(raw_layer_idx)
+        if layer_idx < 0 or layer_idx >= n_layers:
+            raise IndexError(
+                f"layer_loss_weights layer={layer_idx} is outside CLT layers "
+                f"0..{n_layers - 1}."
+            )
+
+        weight = float(raw_weight)
+        if weight < 0.0:
+            raise ValueError(
+                f"layer_loss_weights for layer={layer_idx} must be non-negative. "
+                f"Got {weight}."
+            )
+        weights[layer_idx] = weight
+
+    if sum(weights) <= 0.0:
+        raise ValueError("At least one layer loss weight must be positive.")
+
+    return weights
+
+
 def train_clt(cfg: dict) -> Path:
     seed = int(cfg["training"].get("seed", 42))
     set_seed(seed)
@@ -133,6 +172,10 @@ def train_clt(cfg: dict) -> Path:
     grad_clip = float(cfg["training"].get("grad_clip_norm", 1.0))
     distill_cfg = cfg["training"].get("logit_distillation", {}) or {}
     lambda_logit_distillation = float(distill_cfg.get("weight", 0.0))
+    layer_loss_weights = layer_loss_weights_from_config(
+        cfg["training"],
+        n_layers=int(clt_cfg["n_layers"]),
+    )
 
     replacement_cfg = cfg.get("replacement", {})
     replacement_config = ReplacementConfig(
@@ -165,7 +208,11 @@ def train_clt(cfg: dict) -> Path:
                 mlp_targets=acts.mlp_outputs,
                 update_normalization_stats=True,
             )
-            rec_loss = reconstruction_loss(recons, acts.mlp_outputs)
+            rec_loss = reconstruction_loss(
+                recons,
+                acts.mlp_outputs,
+                layer_weights=layer_loss_weights,
+            )
             sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c)
             loss = rec_loss + lambda_sparsity * sp_loss
             distill_loss = None
@@ -214,6 +261,7 @@ def train_clt(cfg: dict) -> Path:
                         "loss": float(loss.item()),
                         "reconstruction_loss": float(rec_loss.item()),
                         "sparsity_loss": float(sp_loss.item()),
+                        "layer_loss_weights": layer_loss_weights,
                         "logit_distillation_loss": (
                             None
                             if distill_loss is None
