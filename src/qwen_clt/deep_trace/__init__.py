@@ -11,6 +11,10 @@ from qwen_clt.deep_trace.graph import (
     DeepTraceGraph,
     DeepTraceNode,
 )
+from qwen_clt.deep_trace.summary import (
+    load_deep_trace_payload,
+    summarize_deep_trace_payload,
+)
 
 __all__ = [
     "build_deep_trace_graph",
@@ -22,4 +26,6 @@ __all__ = [
     "DeepTraceEdge",
     "DeepTraceGraph",
     "DeepTraceNode",
+    "load_deep_trace_payload",
+    "summarize_deep_trace_payload",
 ]

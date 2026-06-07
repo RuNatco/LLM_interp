@@ -10,6 +10,7 @@ from qwen_clt.deep_trace.build import (
 )
 from qwen_clt.deep_trace.cache import QwenDeepTraceCollector
 from qwen_clt.deep_trace.graph import DeepTraceEdge, DeepTraceGraph, DeepTraceNode
+from qwen_clt.deep_trace.summary import summarize_deep_trace_payload
 from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
 
 
@@ -122,3 +123,48 @@ def test_qwen_deep_trace_collector_on_dummy_qwen_like_model():
 
 def test_resolve_position_handles_negative_positions():
     assert resolve_position(-1, 5) == 4
+
+
+def test_deep_trace_summary_ranks_error_nodes_and_causal_edges():
+    graph = DeepTraceGraph(
+        nodes=[
+            DeepTraceNode(
+                id="mlp_error:L0:P1",
+                type="MLPErrorNode",
+                label="error 0",
+                layer=0,
+                pos=1,
+                value=10.0,
+                metadata={"direct_target_projection": 0.5},
+            ),
+            DeepTraceNode(
+                id="mlp_error:L1:P1",
+                type="MLPErrorNode",
+                label="error 1",
+                layer=1,
+                pos=1,
+                value=1.0,
+                metadata={"direct_target_projection": -3.0},
+            ),
+        ],
+        edges=[
+            DeepTraceEdge(
+                source="feature:L0:P1:F0",
+                target="target:0",
+                score=0.2,
+                kind="causal_ablation_effect",
+            ),
+            DeepTraceEdge(
+                source="feature:L1:P1:F0",
+                target="target:0",
+                score=-4.0,
+                kind="causal_ablation_effect",
+            ),
+        ],
+        metadata={"trace_kind": "deep_trace_stage1"},
+    )
+
+    summary = summarize_deep_trace_payload(graph.to_payload(), top_n=1)
+
+    assert summary["top_mlp_error_nodes"][0]["id"] == "mlp_error:L1:P1"
+    assert summary["top_causal_edges"][0]["source"] == "feature:L1:P1:F0"
