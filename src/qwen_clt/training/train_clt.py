@@ -16,6 +16,7 @@ from qwen_clt.training.losses import (
     last_token_logit_distillation_loss,
     reconstruction_loss,
     tanh_sparsity_loss,
+    target_logit_difference_loss,
 )
 from qwen_clt.training.metrics import summarize_metrics
 from qwen_clt.utils.seed import set_seed
@@ -87,6 +88,34 @@ def should_run_logit_distillation(
         )
 
     return next_micro_step % every_n_micro_steps == 0
+
+
+def should_run_interval_loss(
+    loss_cfg: dict,
+    next_micro_step: int,
+    *,
+    name: str,
+) -> bool:
+    if not bool(loss_cfg.get("enabled", False)):
+        return False
+
+    every_n_micro_steps = int(loss_cfg.get("every_n_micro_steps", 1))
+    if every_n_micro_steps <= 0:
+        raise ValueError(
+            f"training.{name}.every_n_micro_steps must be positive. "
+            f"Got {every_n_micro_steps}."
+        )
+
+    return next_micro_step % every_n_micro_steps == 0
+
+
+def single_token_id(tokenizer, text: str) -> int:
+    token_ids = tokenizer.encode(text, add_special_tokens=False)
+    if len(token_ids) != 1:
+        raise ValueError(
+            f"Expected a single-token string, got {text!r} -> {token_ids}"
+        )
+    return int(token_ids[0])
 
 
 def layer_loss_weights_from_config(
@@ -172,6 +201,16 @@ def train_clt(cfg: dict) -> Path:
     grad_clip = float(cfg["training"].get("grad_clip_norm", 1.0))
     distill_cfg = cfg["training"].get("logit_distillation", {}) or {}
     lambda_logit_distillation = float(distill_cfg.get("weight", 0.0))
+    target_loss_cfg = cfg["training"].get("target_logit_diff_loss", {}) or {}
+    lambda_target_logit_diff = float(target_loss_cfg.get("weight", 0.0))
+    target_token_ids = None
+    if bool(target_loss_cfg.get("enabled", False)):
+        target_positive = str(target_loss_cfg["positive"])
+        target_negative = str(target_loss_cfg["negative"])
+        target_token_ids = (
+            single_token_id(tokenizer, target_positive),
+            single_token_id(tokenizer, target_negative),
+        )
     layer_loss_weights = layer_loss_weights_from_config(
         cfg["training"],
         n_layers=int(clt_cfg["n_layers"]),
@@ -216,8 +255,20 @@ def train_clt(cfg: dict) -> Path:
             sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c)
             loss = rec_loss + lambda_sparsity * sp_loss
             distill_loss = None
+            target_diff_loss = None
 
-            if should_run_logit_distillation(distill_cfg, next_micro_step):
+            run_distillation = should_run_logit_distillation(
+                distill_cfg,
+                next_micro_step,
+            )
+            run_target_loss = should_run_interval_loss(
+                target_loss_cfg,
+                next_micro_step,
+                name="target_logit_diff_loss",
+            )
+            replacement_out = None
+
+            if run_distillation or run_target_loss:
                 with LayerReplacementHook(
                     model=model,
                     autoencoder=clt,
@@ -228,6 +279,8 @@ def train_clt(cfg: dict) -> Path:
                         attention_mask=batch.attention_mask,
                     )
 
+            if run_distillation:
+                assert replacement_out is not None
                 distill_loss = last_token_logit_distillation_loss(
                     student_logits=replacement_out.logits,
                     teacher_logits=acts.logits,
@@ -240,6 +293,21 @@ def train_clt(cfg: dict) -> Path:
                     loss_type=str(distill_cfg.get("loss_type", "centered_mse")),
                 )
                 loss = loss + lambda_logit_distillation * distill_loss
+
+            if run_target_loss:
+                assert replacement_out is not None
+                assert target_token_ids is not None
+                positive_token_id, negative_token_id = target_token_ids
+                target_diff_loss = target_logit_difference_loss(
+                    student_logits=replacement_out.logits,
+                    teacher_logits=acts.logits,
+                    attention_mask=batch.attention_mask,
+                    positive_token_id=positive_token_id,
+                    negative_token_id=negative_token_id,
+                    target_pos=int(target_loss_cfg.get("target_pos", -1)),
+                    loss_type=str(target_loss_cfg.get("loss_type", "smooth_l1")),
+                )
+                loss = loss + lambda_target_logit_diff * target_diff_loss
 
             (loss / grad_accum).backward()
 
@@ -267,6 +335,11 @@ def train_clt(cfg: dict) -> Path:
                             if distill_loss is None
                             else float(distill_loss.item())
                         ),
+                        "target_logit_diff_loss": (
+                            None
+                            if target_diff_loss is None
+                            else float(target_diff_loss.item())
+                        ),
                         **summary,
                     }
                     with metrics_path.open("a", encoding="utf-8") as f:
@@ -277,13 +350,20 @@ def train_clt(cfg: dict) -> Path:
                         if distill_value is None
                         else f"{float(distill_value):.4f}"
                     )
+                    target_diff_value = row["target_logit_diff_loss"]
+                    target_diff_text = (
+                        "none"
+                        if target_diff_value is None
+                        else f"{float(target_diff_value):.4f}"
+                    )
                     tqdm.write(
                         "optimizer_step="
                         f"{optimizer_step} micro_step={micro_step} "
                         f"loss={row['loss']:.4f} "
                         f"nmse={row['nmse_mean']:.4f} "
                         f"l0={row['l0_mean']:.2f} "
-                        f"logit_distill={distill_text}"
+                        f"logit_distill={distill_text} "
+                        f"target_diff={target_diff_text}"
                     )
 
                 if optimizer_step > 0 and optimizer_step % save_every == 0:

@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from qwen_clt.training.losses import reconstruction_loss
+from qwen_clt.training.losses import target_logit_difference_loss
 from qwen_clt.training.train_clt import layer_loss_weights_from_config
 
 
@@ -52,3 +53,54 @@ def test_layer_loss_weights_from_config_rejects_invalid_layer():
             },
             n_layers=24,
         )
+
+
+def test_target_logit_difference_loss_is_zero_for_matching_target_diff():
+    teacher = torch.zeros(2, 3, 8)
+    student = torch.zeros(2, 3, 8)
+    attention_mask = torch.tensor(
+        [
+            [1, 1, 1],
+            [1, 1, 0],
+        ]
+    )
+
+    teacher[:, :, 4] = 3.0
+    teacher[:, :, 5] = 1.0
+    student[:, :, 4] = 5.0
+    student[:, :, 5] = 3.0
+
+    loss = target_logit_difference_loss(
+        student_logits=student,
+        teacher_logits=teacher,
+        positive_token_id=4,
+        negative_token_id=5,
+        attention_mask=attention_mask,
+        target_pos=-1,
+    )
+
+    assert torch.allclose(loss, torch.tensor(0.0))
+
+
+def test_target_logit_difference_loss_uses_last_active_position():
+    teacher = torch.zeros(1, 3, 8)
+    student = torch.zeros(1, 3, 8)
+    attention_mask = torch.tensor([[1, 1, 0]])
+
+    teacher[0, 1, 4] = 2.0
+    teacher[0, 1, 5] = 0.0
+    student[0, 1, 4] = 0.0
+    student[0, 1, 5] = 2.0
+    student[0, 2, 4] = 2.0
+    student[0, 2, 5] = 0.0
+
+    loss = target_logit_difference_loss(
+        student_logits=student,
+        teacher_logits=teacher,
+        positive_token_id=4,
+        negative_token_id=5,
+        attention_mask=attention_mask,
+        target_pos=-1,
+    )
+
+    assert float(loss.item()) > 0.0

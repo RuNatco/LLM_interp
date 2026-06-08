@@ -76,6 +76,65 @@ def _last_token_logits(
     return logits[batch_idx, positions]
 
 
+def _target_positions(
+    attention_mask: torch.Tensor | None,
+    logits: torch.Tensor,
+    target_pos: int,
+) -> torch.Tensor:
+    if attention_mask is None:
+        if target_pos < 0:
+            target_pos = logits.shape[1] + target_pos
+        if target_pos < 0 or target_pos >= logits.shape[1]:
+            raise IndexError(f"target_pos={target_pos} is outside sequence length.")
+        return torch.full(
+            (logits.shape[0],),
+            int(target_pos),
+            dtype=torch.long,
+            device=logits.device,
+        )
+
+    mask = attention_mask.to(device=logits.device).bool()
+    if mask.shape != logits.shape[:2]:
+        raise ValueError(
+            f"attention_mask shape {mask.shape} does not match logits shape "
+            f"{logits.shape[:2]}."
+        )
+    if bool((mask.long().sum(dim=1) <= 0).any()):
+        raise ValueError("Every sequence must have at least one active token.")
+
+    if target_pos < 0:
+        resolved = []
+        for row in mask:
+            active_positions = torch.nonzero(row, as_tuple=False).flatten()
+            if abs(target_pos) > active_positions.numel():
+                raise IndexError(
+                    f"target_pos={target_pos} is outside at least one sequence."
+                )
+            resolved.append(active_positions[int(target_pos)])
+        return torch.stack(resolved)
+
+    positions = torch.full(
+        (logits.shape[0],),
+        int(target_pos),
+        dtype=torch.long,
+        device=logits.device,
+    )
+    if bool((positions >= logits.shape[1]).any()):
+        raise IndexError(f"target_pos={target_pos} is outside sequence length.")
+    return positions
+
+
+def _logit_diff_at_positions(
+    logits: torch.Tensor,
+    positions: torch.Tensor,
+    positive_token_id: int,
+    negative_token_id: int,
+) -> torch.Tensor:
+    batch_idx = torch.arange(logits.shape[0], device=logits.device)
+    selected = logits[batch_idx, positions].float()
+    return selected[:, positive_token_id] - selected[:, negative_token_id]
+
+
 def _center_scale_logits(logits: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     logits = logits.float()
     centered = logits - logits.mean(dim=-1, keepdim=True)
@@ -143,6 +202,55 @@ def last_token_logit_distillation_loss(
     raise ValueError(
         "Unsupported logit distillation loss_type. "
         "Expected 'centered_mse', 'mse', or 'kl'. "
+        f"Got {loss_type!r}."
+    )
+
+
+def target_logit_difference_loss(
+    student_logits: torch.Tensor,
+    teacher_logits: torch.Tensor,
+    positive_token_id: int,
+    negative_token_id: int,
+    attention_mask: torch.Tensor | None = None,
+    target_pos: int = -1,
+    loss_type: str = "smooth_l1",
+) -> torch.Tensor:
+    if student_logits.shape != teacher_logits.shape:
+        raise ValueError(
+            f"Shape mismatch: student={student_logits.shape}, "
+            f"teacher={teacher_logits.shape}"
+        )
+    if student_logits.ndim != 3:
+        raise ValueError(
+            "Expected logits with shape [batch, seq, vocab], "
+            f"got {student_logits.shape}."
+        )
+
+    positions = _target_positions(attention_mask, student_logits, target_pos)
+    student_diff = _logit_diff_at_positions(
+        student_logits,
+        positions,
+        positive_token_id=positive_token_id,
+        negative_token_id=negative_token_id,
+    )
+    teacher_diff = _logit_diff_at_positions(
+        teacher_logits.detach().to(student_logits.device),
+        positions,
+        positive_token_id=positive_token_id,
+        negative_token_id=negative_token_id,
+    )
+
+    loss_type = loss_type.lower()
+    if loss_type == "mse":
+        return F.mse_loss(student_diff, teacher_diff)
+    if loss_type == "mae":
+        return F.l1_loss(student_diff, teacher_diff)
+    if loss_type in {"smooth_l1", "huber"}:
+        return F.smooth_l1_loss(student_diff, teacher_diff)
+
+    raise ValueError(
+        "Unsupported target logit-difference loss_type. "
+        "Expected 'smooth_l1', 'huber', 'mse', or 'mae'. "
         f"Got {loss_type!r}."
     )
 

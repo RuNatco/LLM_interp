@@ -13,7 +13,14 @@
 ```text
 configs/
   qwen2_5_0_5b_base_clt_v0.yaml
+  qwen2_5_0_5b_base_clt_fidelity_v1.yaml
+  qwen2_5_0_5b_base_clt_fidelity_v2.yaml
+  qwen2_5_0_5b_base_clt_fidelity_v3.yaml
+  qwen2_5_0_5b_base_clt_fidelity_v4.yaml
+  qwen2_5_0_5b_base_clt_late_loss_v1.yaml
+  qwen2_5_0_5b_base_clt_late_target_v1.yaml
   qwen2_5_0_5b_instruct_clt_v0.yaml
+  qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
 
 src/qwen_clt/
   data/
@@ -35,6 +42,10 @@ src/qwen_clt/
     graph.py
     attribute.py
     prune.py
+  deep_trace/
+    cache.py
+    graph.py
+    build.py
   interventions/
     feature_intervention.py
   utils/
@@ -49,6 +60,9 @@ scripts/
   04_run_feature_interventions.py
   05_visualize_attribution_graph_svg.py
   06_validate_attribution_graph.py
+  07_build_deep_trace_graph.py
+  08_summarize_deep_trace_graph.py
+  09_build_deep_trace_prompt_suite.py
 ```
 
 ## Replacement abstractions
@@ -96,6 +110,48 @@ layernorm/error nodes и ошибки replacement model. Поэтому граф
 С флагом `--strict-fidelity` низкая replacement fidelity останавливает graph или
 validation run. Без этого флага graph всё ещё можно строить как diagnostic
 proxy, но его нельзя описывать как faithful circuit.
+
+## Deep Trace stage 1
+
+`scripts/07_build_deep_trace_graph.py` — первый шаг от proxy attribution к
+более глубокому replacement-model tracing. Основной baseline для этого этапа —
+`qwen2_5_0_5b_base_clt_fidelity_v2`, потому что он лучше всего сохраняет
+target direction и общий logit landscape среди текущих запусков.
+`scripts/08_summarize_deep_trace_graph.py` печатает top error nodes и causal
+edges из готового graph JSON. `scripts/09_build_deep_trace_prompt_suite.py`
+строит Deep Trace graphs для набора prompts, чтобы результат не зависел от
+одного примера.
+
+Здесь `stage 1` означает версию tracing-архитектуры, а не CLT checkpoint
+`base_clt_fidelity_v1`. Основной checkpoint для Deep Trace stage 1 — v2.
+
+```text
+proxy attribution
+-> validated proxy graph
+-> cached replacement trace
+-> typed circuit graph with error nodes
+-> causal pruning
+-> frontend-compatible graph
+```
+
+`Deep Trace stage 1` уже добавляет:
+
+- activation cache для residual stream, attention outputs, MLP outputs,
+  layernorm inputs/outputs, replacement errors и logits;
+- typed graph nodes: `CLTFeatureNode`, `AttentionHeadNode`, `MLPErrorNode`,
+  `ResidualStreamNode`, `LayerNormNode`, `LogitTargetNode`;
+- явные error nodes для `original_mlp_output - clt_reconstruction`;
+- replacement-conditioned CLT features, то есть трассируется именно
+  replacement model, а не только original Qwen activations;
+- decoder-write edges от features к residual nodes;
+- causal ablation edges для top-k feature nodes;
+- graph JSON с node types, edge kinds, scores, fidelity metadata и validation
+  metadata.
+
+Ограничение остаётся: это ещё не full path attribution. Attention в v1 хранится
+как layer-level output, не как per-head decomposition. Deep graph нужно читать
+вместе с replacement fidelity и causal validation, иначе он может объяснять
+ошибки replacement model, а не поведение Qwen.
 
 ## Causal validation
 
@@ -160,6 +216,87 @@ max_optimizer_steps: 1500
 
 Если replacement fidelity всё ещё низкая, следующий дорогой прогон стоит
 делать с `features_per_layer: 512` и `max_optimizer_steps: 3000`.
+Для этого добавлен отдельный config:
+
+```text
+configs/qwen2_5_0_5b_base_clt_fidelity_v1.yaml
+```
+
+Он пишет результаты в `outputs/base_clt_fidelity_v1`, чтобы не смешивать
+high-fidelity attempt с основным `base_clt_v0`.
+
+После успешного `v1` можно пробовать более дорогой `v2`:
+
+```text
+configs/qwen2_5_0_5b_base_clt_fidelity_v2.yaml
+```
+
+Он использует `features_per_layer: 1024`, `max_optimizer_steps: 10000` и
+`lambda_sparsity: 0.00002`; цель — приблизиться к
+`last_token_top1_agreement` в диапазоне `0.4-0.6`.
+
+Для Instruct-линии есть зеркальный high-fidelity config:
+
+```text
+configs/qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
+```
+
+Он использует ту же CLT capacity, но модель
+`Qwen/Qwen2.5-0.5B-Instruct` и `chat_template: true`. Deep Trace scripts
+автоматически применяют instruct chat template из checkpoint config.
+
+Если `v2` улучшает KL и target logit-difference, но last-token top-1 остаётся
+около `0.3`, следующий шаг — не просто увеличивать capacity, а менять цель
+обучения:
+
+```text
+configs/qwen2_5_0_5b_base_clt_fidelity_v3.yaml
+```
+
+`v3` сохраняет capacity `v2`, но включает layerwise activation/target
+normalization внутри CLT. Replacement hook и proxy attribution используют те же
+stats из checkpoint, поэтому реконструкция по-прежнему подставляется в raw
+`mlp_output` scale.
+
+```text
+configs/qwen2_5_0_5b_base_clt_fidelity_v4.yaml
+```
+
+`v4` добавляет лёгкую last-token logit distillation: на каждом micro-batch
+replacement forward сравнивается с original Qwen только по teacher top-k logits
+на последней активной позиции. Это дороже, чем `v3`, но должно бить прямо в
+`last_token_top1_agreement`.
+
+Deep Trace suite на base v2 показал, что replacement errors системно
+концентрируются в поздних слоях `L18-L23`, особенно `L20-L21`. Для проверки
+этой гипотезы добавлен targeted run:
+
+```text
+configs/qwen2_5_0_5b_base_clt_late_loss_v1.yaml
+```
+
+Он сохраняет capacity `v2`, но взвешивает reconstruction loss по слоям:
+`L18/L19/L22/L23` получают вес `2.0`, `L20/L21` — вес `3.0`. Цель — снизить
+late-layer `MLPErrorNode` projections и улучшить target-direction fidelity без
+агрессивной distillation.
+
+Так как `late_loss_v1` улучшил causal sign agreement, но не улучшил
+`target_logit_diff_mae` и выявил новый bottleneck в `L23`, добавлен более
+комплексный targeted run:
+
+```text
+configs/qwen2_5_0_5b_base_clt_late_target_v1.yaml
+```
+
+Он сохраняет late-layer weighting, усиливает `L23` до веса `4.0` и добавляет
+мягкий target-aware loss на сохранение:
+
+```text
+logit(" increase") - logit(" decrease")
+```
+
+Цель — одновременно удержать global replacement fidelity, снизить
+target-direction error и уменьшить final-layer replacement-error bottleneck.
 
 ## Установка
 
