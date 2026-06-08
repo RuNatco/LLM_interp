@@ -693,3 +693,54 @@ last_token_top1_agreement should cross or approach 0.30.
 L23 replacement_error_projection should decrease versus late_loss_v1.
 Deep Trace suite mean sign_match should stay near or above late_loss_v1.
 ```
+
+## 12. Base Late-Layer Tiny Target Loss
+
+Use this after `base_clt_late_target_v2` if `weight: 0.02` improves
+`target_logit_diff_mae` but collapses global replacement fidelity. This run
+keeps the same late-layer weighting, but makes target supervision a very weak
+regularizer:
+
+```text
+target_logit_diff_loss.weight: 0.001
+target_logit_diff_loss.every_n_micro_steps: 10
+```
+
+Train:
+
+```bash
+python scripts/01_train_clt.py \
+  --config configs/qwen2_5_0_5b_base_clt_late_target_v3.yaml
+```
+
+Evaluate:
+
+```bash
+python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_late_target_v3.yaml
+```
+
+Build the single-prompt Deep Trace only if replacement fidelity does not
+collapse:
+
+```bash
+python scripts/07_build_deep_trace_graph.py \
+  --checkpoint outputs/base_clt_late_target_v3/clt_final.pt \
+  --prompt "Demand is greater than generation, so the price will" \
+  --positive " increase" \
+  --negative " decrease" \
+  --max-feature-nodes 64 \
+  --top-error-nodes 8 \
+  --causal-top-k 8 \
+  --output outputs/base_clt_late_target_v3/price_deep_trace.json \
+  --cache-output outputs/base_clt_late_target_v3/price_deep_trace_cache.pt
+```
+
+Compare against base v2 and late_target_v2:
+
+```text
+target_logit_diff_mae should improve or hold near 0.627.
+kl_div should stay near 2-3, not jump toward late_target_v2's ~15.
+last_token_top1_agreement should stay near 0.28-0.30 or better.
+top1_agreement should not collapse below 0.30.
+```

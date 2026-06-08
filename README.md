@@ -19,6 +19,8 @@ configs/
   qwen2_5_0_5b_base_clt_fidelity_v4.yaml
   qwen2_5_0_5b_base_clt_late_loss_v1.yaml
   qwen2_5_0_5b_base_clt_late_target_v1.yaml
+  qwen2_5_0_5b_base_clt_late_target_v2.yaml
+  qwen2_5_0_5b_base_clt_late_target_v3.yaml
   qwen2_5_0_5b_instruct_clt_v0.yaml
   qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
 
@@ -281,22 +283,27 @@ late-layer `MLPErrorNode` projections и улучшить target-direction fidel
 агрессивной distillation.
 
 Так как `late_loss_v1` улучшил causal sign agreement, но не улучшил
-`target_logit_diff_mae` и выявил новый bottleneck в `L23`, добавлен более
-комплексный targeted run:
+`target_logit_diff_mae` и выявил новый bottleneck в `L23`, добавлены
+target-aware runs:
 
 ```text
 configs/qwen2_5_0_5b_base_clt_late_target_v1.yaml
+configs/qwen2_5_0_5b_base_clt_late_target_v2.yaml
+configs/qwen2_5_0_5b_base_clt_late_target_v3.yaml
 ```
 
-Он сохраняет late-layer weighting, усиливает `L23` до веса `4.0` и добавляет
-мягкий target-aware loss на сохранение:
+Они сохраняют late-layer weighting, усиливают `L23` до веса `4.0` и добавляют
+target-aware loss на сохранение:
 
 ```text
 logit(" increase") - logit(" decrease")
 ```
 
-Цель — одновременно удержать global replacement fidelity, снизить
-target-direction error и уменьшить final-layer replacement-error bottleneck.
+`late_target_v2` с `weight: 0.02` показал negative result: target MAE слегка
+улучшился, но global replacement fidelity разрушилась. Поэтому следующий
+эксперимент `late_target_v3` делает target-loss очень слабым и редким:
+`weight: 0.001`, `every_n_micro_steps: 10`. Цель — проверить target-direction
+bias без разрушения KL/top1.
 
 ## Установка
 

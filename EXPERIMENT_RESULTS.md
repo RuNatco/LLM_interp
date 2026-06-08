@@ -687,7 +687,7 @@ L23-upweighted reconstruction run и как пример того, почему 
 обязательно нужно проверять `target_diff=...`, а не только наличие YAML-поля в
 checkpoint.
 
-## Planned Experiment 10: Base Late-Layer Target Loss v2
+## Experiment 10: Base Late-Layer Target Loss v2
 
 Config:
 
@@ -695,31 +695,10 @@ Config:
 configs/qwen2_5_0_5b_base_clt_late_target_v2.yaml
 ```
 
-Статус: конфиг добавлен. Первый cloud run повторил `late_target_v1`, потому что
-облачный training code игнорировал `target_logit_diff_loss`. После этого код
-был исправлен: training теперь печатает стартовую строку
-`[training] target_logit_diff_loss enabled: ...`, пишет
-`target_logit_diff_loss_enabled`, `target_logit_diff_loss_weight` и
-`target_logit_diff_loss_ran` в `metrics.jsonl`, а `scripts/_path_setup.py`
-подключает локальный `src` относительно папки проекта.
-
-Эксперимент ещё нужно перезапустить на обновлённом коде. Валидным он считается
-только если в логе обучения есть:
-
-```text
-target_diff=<number>
-```
-
-а не:
-
-```text
-target_diff=none
-```
-
 Цель: повторить late_target setup с более слабым target-aware objective.
-Гипотеза: вес `0.05` был слишком большим, поэтому он улучшал causal sign match,
-но портил replacement fidelity. Новый вес должен сохранить часть causal
-стабильности и меньше давить на KL/top1/target MAE.
+Гипотеза была такой: если вес `0.05` слишком велик, то уменьшение до `0.02`
+сохранит часть target-direction пользы и меньше повредит общей replacement
+fidelity.
 
 Изменение относительно late_target_v1:
 
@@ -728,19 +707,86 @@ target_logit_diff_loss.weight: 0.05 -> 0.02
 output_dir: outputs/base_clt_late_target_v2
 ```
 
+Фактический результат replacement eval:
+
+```text
+top1_agreement: 0.0011
+last_token_top1_agreement: 0.0000
+kl_div: 14.9466
+last_token_kl_div: 14.1860
+logit_mse: 30.2246
+last_token_logit_mse: 29.4853
+mean_abs_logit_diff: 4.4761
+last_token_mean_abs_logit_diff: 4.4360
+target_logit_diff_mae: 0.6170
+target_logit_diff_mse: 0.7402
+target_logit_diff_original_mean: 1.9140
+target_logit_diff_replacement_mean: 1.8697
+```
+
+Сравнение с основным baseline `base v2`:
+
+```text
+base v2 target_logit_diff_mae: 0.6271
+v2 target-loss target_logit_diff_mae: 0.6170
+
+base v2 last_token_top1_agreement: 0.2915
+v2 target-loss last_token_top1_agreement: 0.0000
+
+base v2 kl_div: 2.0033
+v2 target-loss kl_div: 14.9466
+```
+
+Интерпретация: target-aware loss действительно слегка улучшил целевую
+метрику `target_logit_diff_mae`, но цена оказалась неприемлемой: replacement
+model почти полностью потеряла общий logit landscape. Такой checkpoint нельзя
+использовать для Deep Trace, потому что он будет объяснять не исходную Qwen и
+не faithful replacement model, а деградировавшую модель, оптимизированную под
+один scalar direction.
+
+Важный вывод: single-direction target logit supervision не подходит как
+достаточно сильный auxiliary objective в текущем виде. Даже `weight: 0.02`
+оказался слишком агрессивным, если применять его в полном replacement forward
+на каждом micro-step.
+
+## Planned Experiment 11: Base Late-Layer Tiny Target Loss v3
+
+Config:
+
+```text
+configs/qwen2_5_0_5b_base_clt_late_target_v3.yaml
+```
+
+Цель: проверить, может ли target-aware objective работать только как очень
+слабый регуляризатор, а не как заметная движущая сила обучения.
+
+Изменение относительно late_target_v2:
+
+```text
+target_logit_diff_loss.weight: 0.02 -> 0.001
+target_logit_diff_loss.every_n_micro_steps: 1 -> 10
+output_dir: outputs/base_clt_late_target_v3
+```
+
+Гипотеза: если проблема v2 была в слишком сильном и слишком частом
+single-direction градиенте, то tiny target-loss должен сохранить fidelity
+примерно на уровне late-layer reconstruction run и дать лишь небольшой bias в
+сторону target direction.
+
 Критерии успеха:
 
 ```text
-target_logit_diff_mae < 0.6271, желательно лучше base v2
-last_token_kl_div near 2.0
-last_token_top1_agreement near or above 0.30
-Deep Trace suite sign_match better than base v2, but not at the cost of fidelity
-L23 replacement_error_projection lower than late_target_v1
+kl_div <= 2.5
+last_token_kl_div <= 2.5
+last_token_top1_agreement near 0.28-0.30 or better
+target_logit_diff_mae <= 0.6271
+top1_agreement should not collapse below 0.30
 ```
 
-Если `target_logit_diff_mae` останется хуже base v2, следующий вариант должен
-снизить вес до `0.01` или отключить target-aware loss и искать улучшение через
-capacity/late-layer reconstruction.
+Если v3 снова разрушит KL/top1, target-aware loss нужно временно убрать из
+основной линии экспериментов и возвращаться к более общей fidelity:
+capacity, sparsity, late-layer capacity allocation и replacement-conditioned
+training.
 
 ## Сводная таблица
 
@@ -754,6 +800,7 @@ capacity/late-layer reconstruction.
 | instruct v2 | instruct model transfer | 0.364 | 0.084 | 3.143 | 5.189 | 0.980 | not reliable at last token |
 | late_loss v1 | weighted late-layer reconstruction | 0.374 | 0.295 | 1.899 | 2.031 | 0.663 | improves global fidelity/sign stability, not target MAE |
 | late_target v1 attempt | L23-upweighted run; target loss inactive | 0.356 | 0.272 | 2.041 | 1.885 | 0.682 | invalid as target-loss result |
+| late_target v2 | target loss 0.02 every step | 0.001 | 0.000 | 14.947 | 14.186 | 0.617 | target MAE improves slightly, replacement collapses |
 
 ## Текущий выбор baseline
 
@@ -796,7 +843,9 @@ base_clt_late_loss_v1
 Вторая проблема: разные objectives улучшают разные аспекты fidelity. v4
 улучшает top1, но портит KL. v3 улучшает часть continuous metrics, но портит
 top1. Old `late_target_v1` улучшил causal sign match, но target-loss в нём
-фактически не работал, поэтому вывод о target-aware objective пока не сделан.
+фактически не работал. Валидный `late_target_v2` показал, что target-aware
+objective может улучшить target MAE, но в текущей силе катастрофически рушит
+replacement fidelity.
 
 Третья проблема: late-layer errors остаются ключевым bottleneck. Deep Trace
 suite стабильно указывает на `L18-L23`, особенно `L20`, `L21`, `L19` и затем
@@ -814,16 +863,15 @@ suite стабильно указывает на `L18-L23`, особенно `L2
 Ближайший эксперимент:
 
 ```text
-base_clt_late_target_v2
+base_clt_late_target_v3
 ```
 
-Его цель - проверить, была ли проблема late_target_v1 именно в слишком большом
-весе target-aware loss. После обнаруженного cloud import issue этот запуск
-нужно считать первым настоящим target-loss экспериментом, если в логах
-появляется `target_diff=<number>`.
+Его цель - проверить, может ли single-direction target loss быть безопасным,
+если сделать его очень слабым и редким: `weight: 0.001`,
+`every_n_micro_steps: 10`.
 
-Если v2 target loss не улучшит target MAE, следующий путь - не усиливать
-target loss дальше, а возвращаться к более общей fidelity:
+Если v3 снова разрушит KL/top1, следующий путь - не усиливать target loss
+дальше, а возвращаться к более общей fidelity:
 
 ```text
 more capacity
