@@ -13,6 +13,7 @@ __pycache__/
 venv/
 
 # Heavy experiment artifacts belong in external/cloud artifact storage.
+outputs/
 *.pt
 *.pth
 *.safetensors

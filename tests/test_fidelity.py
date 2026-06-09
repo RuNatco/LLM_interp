@@ -9,8 +9,13 @@ from qwen_clt.attribution.fidelity import (
 
 def test_default_replacement_metrics_path_is_checkpoint_sibling():
     assert str(
-        default_replacement_metrics_path("outputs/base_clt_v0/clt_final.pt")
-    ) == "outputs/base_clt_v0/replacement_eval_metrics.json"
+        default_replacement_metrics_path(
+            "outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt"
+        )
+    ) == (
+        "outputs/base_clt_recon_fidelity_v2_continue_v2/"
+        "replacement_eval_metrics.json"
+    )
 
 
 def test_fidelity_report_warns_on_low_last_token_top1():

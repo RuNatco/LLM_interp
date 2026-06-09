@@ -11,12 +11,9 @@ from qwen_clt.models.cross_layer_transcoder import (
     CrossLayerTranscoder,
     clt_normalization_kwargs,
 )
-from qwen_clt.replacement import LayerReplacementHook, ReplacementConfig
 from qwen_clt.training.losses import (
-    last_token_logit_distillation_loss,
     reconstruction_loss,
     tanh_sparsity_loss,
-    target_logit_difference_loss,
 )
 from qwen_clt.training.metrics import summarize_metrics
 from qwen_clt.utils.seed import set_seed
@@ -71,90 +68,6 @@ def prune_old_step_checkpoints(output_dir: Path, keep_last: int) -> None:
 
     for path in stale:
         path.unlink()
-
-
-def should_run_logit_distillation(
-    distill_cfg: dict,
-    next_micro_step: int,
-) -> bool:
-    if not bool(distill_cfg.get("enabled", False)):
-        return False
-
-    every_n_micro_steps = int(distill_cfg.get("every_n_micro_steps", 1))
-    if every_n_micro_steps <= 0:
-        raise ValueError(
-            "training.logit_distillation.every_n_micro_steps must be positive. "
-            f"Got {every_n_micro_steps}."
-        )
-
-    return next_micro_step % every_n_micro_steps == 0
-
-
-def should_run_interval_loss(
-    loss_cfg: dict,
-    next_micro_step: int,
-    *,
-    name: str,
-) -> bool:
-    if not bool(loss_cfg.get("enabled", False)):
-        return False
-
-    every_n_micro_steps = int(loss_cfg.get("every_n_micro_steps", 1))
-    if every_n_micro_steps <= 0:
-        raise ValueError(
-            f"training.{name}.every_n_micro_steps must be positive. "
-            f"Got {every_n_micro_steps}."
-        )
-
-    return next_micro_step % every_n_micro_steps == 0
-
-
-def single_token_id(tokenizer, text: str) -> int:
-    token_ids = tokenizer.encode(text, add_special_tokens=False)
-    if len(token_ids) != 1:
-        raise ValueError(
-            f"Expected a single-token string, got {text!r} -> {token_ids}"
-        )
-    return int(token_ids[0])
-
-
-def layer_loss_weights_from_config(
-    training_cfg: dict,
-    n_layers: int,
-) -> list[float] | None:
-    weights_cfg = training_cfg.get("layer_loss_weights")
-    if not weights_cfg:
-        return None
-
-    default_weight = float(weights_cfg.get("default", 1.0))
-    if default_weight < 0.0:
-        raise ValueError(
-            f"layer_loss_weights.default must be non-negative. Got {default_weight}."
-        )
-
-    weights = [default_weight for _ in range(n_layers)]
-    layer_overrides = weights_cfg.get("layers", {}) or {}
-
-    for raw_layer_idx, raw_weight in layer_overrides.items():
-        layer_idx = int(raw_layer_idx)
-        if layer_idx < 0 or layer_idx >= n_layers:
-            raise IndexError(
-                f"layer_loss_weights layer={layer_idx} is outside CLT layers "
-                f"0..{n_layers - 1}."
-            )
-
-        weight = float(raw_weight)
-        if weight < 0.0:
-            raise ValueError(
-                f"layer_loss_weights for layer={layer_idx} must be non-negative. "
-                f"Got {weight}."
-            )
-        weights[layer_idx] = weight
-
-    if sum(weights) <= 0.0:
-        raise ValueError("At least one layer loss weight must be positive.")
-
-    return weights
 
 
 def load_initial_clt_weights(
@@ -229,32 +142,6 @@ def train_clt(cfg: dict) -> Path:
     lambda_sparsity = float(training_cfg.get("lambda_sparsity", 1e-4))
     sparsity_c = float(training_cfg.get("sparsity_c", 1.0))
     grad_clip = float(training_cfg.get("grad_clip_norm", 1.0))
-    distill_cfg = training_cfg.get("logit_distillation", {}) or {}
-    lambda_logit_distillation = float(distill_cfg.get("weight", 0.0))
-    target_loss_cfg = training_cfg.get("target_logit_diff_loss", {}) or {}
-    lambda_target_logit_diff = float(target_loss_cfg.get("weight", 0.0))
-    target_token_ids = None
-    if bool(target_loss_cfg.get("enabled", False)):
-        target_positive = str(target_loss_cfg["positive"])
-        target_negative = str(target_loss_cfg["negative"])
-        target_token_ids = (
-            single_token_id(tokenizer, target_positive),
-            single_token_id(tokenizer, target_negative),
-        )
-    layer_loss_weights = layer_loss_weights_from_config(
-        training_cfg,
-        n_layers=int(clt_cfg["n_layers"]),
-    )
-
-    replacement_cfg = cfg.get("replacement", {})
-    replacement_config = ReplacementConfig(
-        read_from=replacement_cfg.get("read_from", clt_cfg.get("input_kind")),
-        replace_at=replacement_cfg.get("replace_at", "mlp_output"),
-        replace_mode=replacement_cfg.get("replace_mode", "full"),
-        detach_reconstruction=bool(
-            replacement_cfg.get("detach_reconstruction", False)
-        ),
-    )
 
     metrics_path = output_dir / "metrics.jsonl"
     micro_step = 0
@@ -270,74 +157,14 @@ def train_clt(cfg: dict) -> Path:
             with torch.no_grad():
                 acts = collector.run(batch.input_ids, batch.attention_mask)
 
-            next_micro_step = micro_step + 1
-
             features, recons = clt(
                 acts.mlp_inputs,
                 mlp_targets=acts.mlp_outputs,
                 update_normalization_stats=True,
             )
-            rec_loss = reconstruction_loss(
-                recons,
-                acts.mlp_outputs,
-                layer_weights=layer_loss_weights,
-            )
+            rec_loss = reconstruction_loss(recons, acts.mlp_outputs)
             sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c)
             loss = rec_loss + lambda_sparsity * sp_loss
-            distill_loss = None
-            target_diff_loss = None
-
-            run_distillation = should_run_logit_distillation(
-                distill_cfg,
-                next_micro_step,
-            )
-            run_target_loss = should_run_interval_loss(
-                target_loss_cfg,
-                next_micro_step,
-                name="target_logit_diff_loss",
-            )
-            replacement_out = None
-
-            if run_distillation or run_target_loss:
-                with LayerReplacementHook(
-                    model=model,
-                    autoencoder=clt,
-                    config=replacement_config,
-                ):
-                    replacement_out = model(
-                        input_ids=batch.input_ids,
-                        attention_mask=batch.attention_mask,
-                    )
-
-            if run_distillation:
-                assert replacement_out is not None
-                distill_loss = last_token_logit_distillation_loss(
-                    student_logits=replacement_out.logits,
-                    teacher_logits=acts.logits,
-                    attention_mask=batch.attention_mask,
-                    top_k=distill_cfg.get("top_k", 256),
-                    temperature=float(distill_cfg.get("temperature", 1.0)),
-                    normalize_logits=bool(
-                        distill_cfg.get("normalize_logits", True)
-                    ),
-                    loss_type=str(distill_cfg.get("loss_type", "centered_mse")),
-                )
-                loss = loss + lambda_logit_distillation * distill_loss
-
-            if run_target_loss:
-                assert replacement_out is not None
-                assert target_token_ids is not None
-                positive_token_id, negative_token_id = target_token_ids
-                target_diff_loss = target_logit_difference_loss(
-                    student_logits=replacement_out.logits,
-                    teacher_logits=acts.logits,
-                    attention_mask=batch.attention_mask,
-                    positive_token_id=positive_token_id,
-                    negative_token_id=negative_token_id,
-                    target_pos=int(target_loss_cfg.get("target_pos", -1)),
-                    loss_type=str(target_loss_cfg.get("loss_type", "smooth_l1")),
-                )
-                loss = loss + lambda_target_logit_diff * target_diff_loss
 
             (loss / grad_accum).backward()
 
@@ -359,41 +186,16 @@ def train_clt(cfg: dict) -> Path:
                         "loss": float(loss.item()),
                         "reconstruction_loss": float(rec_loss.item()),
                         "sparsity_loss": float(sp_loss.item()),
-                        "layer_loss_weights": layer_loss_weights,
-                        "logit_distillation_loss": (
-                            None
-                            if distill_loss is None
-                            else float(distill_loss.item())
-                        ),
-                        "target_logit_diff_loss": (
-                            None
-                            if target_diff_loss is None
-                            else float(target_diff_loss.item())
-                        ),
                         **summary,
                     }
                     with metrics_path.open("a", encoding="utf-8") as f:
                         f.write(json.dumps(row, ensure_ascii=False) + "\n")
-                    distill_value = row["logit_distillation_loss"]
-                    distill_text = (
-                        "none"
-                        if distill_value is None
-                        else f"{float(distill_value):.4f}"
-                    )
-                    target_diff_value = row["target_logit_diff_loss"]
-                    target_diff_text = (
-                        "none"
-                        if target_diff_value is None
-                        else f"{float(target_diff_value):.4f}"
-                    )
                     tqdm.write(
                         "optimizer_step="
                         f"{optimizer_step} micro_step={micro_step} "
                         f"loss={row['loss']:.4f} "
                         f"nmse={row['nmse_mean']:.4f} "
-                        f"l0={row['l0_mean']:.2f} "
-                        f"logit_distill={distill_text} "
-                        f"target_diff={target_diff_text}"
+                        f"l0={row['l0_mean']:.2f}"
                     )
 
                 if optimizer_step > 0 and optimizer_step % save_every == 0:
