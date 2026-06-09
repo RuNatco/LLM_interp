@@ -34,7 +34,7 @@ DEFAULT_PROMPTS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build Deep Trace stage 1 graphs for a prompt suite."
+        description="Build Deep Trace stage 2 graphs for a prompt suite."
     )
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--prompt", action="append", default=None)
@@ -161,11 +161,14 @@ def main() -> None:
                 ).get("mean_mlp_error_norm"),
                 "top_mlp_error_nodes": summary["top_mlp_error_nodes"],
                 "top_causal_edges": summary["top_causal_edges"],
+                "top_causal_residual_delta_edges": summary[
+                    "top_causal_residual_delta_edges"
+                ],
             }
         )
 
     suite_summary = {
-        "kind": "deep_trace_stage1_prompt_suite",
+        "kind": "deep_trace_stage2_prompt_suite",
         "checkpoint": str(Path(args.checkpoint)),
         "positive": args.positive,
         "negative": args.negative,

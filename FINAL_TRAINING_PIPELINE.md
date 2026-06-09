@@ -28,7 +28,7 @@ last_token_mean_abs_logit_diff: 1.3113203382400012
 target_logit_diff_mae: 0.5119109504701548
 ```
 
-Лучшие Deep Trace suite metrics:
+Лучшие Deep Trace suite metrics до stage 2 upgrade:
 
 ```text
 replacement fidelity gate: passed
@@ -156,7 +156,7 @@ Inspect metrics:
 cat outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
 ```
 
-## 5. Build Final Deep Trace Suite
+## 5. Build Final Deep Trace Stage 2 Suite
 
 ```bash
 python3 scripts/09_build_deep_trace_prompt_suite.py \

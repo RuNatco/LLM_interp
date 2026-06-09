@@ -18,11 +18,11 @@ from qwen_clt.replacement import ReplacementConfig
 
 
 DEEP_TRACE_LIMITATIONS = [
-    "Deep Trace stage 1 is not full path attribution.",
-    "Attention is represented as layer-level attention output, not per-head output.",
-    "Feature-to-residual edges are decoder-write proxies.",
-    "Residual, layernorm and attention edges are diagnostic projections, not causal proofs.",
-    "Important nodes and edges should still be validated with interventions.",
+    "Deep Trace stage 2 is not full path attribution.",
+    "Attention heads are decomposed at o_proj contribution level, not token-to-token path level.",
+    "Top feature-to-residual edges use causal cache deltas; non-validated feature edges remain decoder-write proxies.",
+    "Layernorm and non-causal projection edges are diagnostics, not causal proofs.",
+    "Important nodes and edges should still be validated across prompts.",
 ]
 
 
@@ -51,8 +51,23 @@ def _tensor_at_pos(tensor: torch.Tensor, pos: int) -> torch.Tensor:
     if tensor.ndim != 3:
         raise ValueError(f"Expected [batch, seq, d_model], got {tensor.shape}")
     if tensor.shape[0] != 1:
-        raise ValueError("Deep Trace stage 1 currently expects batch size 1.")
+        raise ValueError("Deep Trace stage 2 currently expects batch size 1.")
     return tensor[0, pos].float()
+
+
+def _head_tensor_at_pos(tensor: torch.Tensor, pos: int, head_idx: int) -> torch.Tensor:
+    if tensor.ndim != 4:
+        raise ValueError(
+            "Expected attention head tensor with shape "
+            f"[batch, seq, heads, d_model], got {tensor.shape}"
+        )
+    if tensor.shape[0] != 1:
+        raise ValueError("Deep Trace stage 2 currently expects batch size 1.")
+    if head_idx < 0 or head_idx >= tensor.shape[2]:
+        raise IndexError(
+            f"head_idx={head_idx} is outside attention heads 0..{tensor.shape[2] - 1}."
+        )
+    return tensor[0, pos, head_idx].float()
 
 
 def _projection_score(
@@ -65,8 +80,23 @@ def _projection_score(
     return float(torch.dot(value, target_vector).item())
 
 
+def _head_projection_score(
+    tensor: torch.Tensor,
+    target_vector: torch.Tensor,
+    pos: int,
+    head_idx: int,
+) -> float:
+    value = _head_tensor_at_pos(tensor, pos, head_idx)
+    target_vector = target_vector.to(value.device).float()
+    return float(torch.dot(value, target_vector).item())
+
+
 def _norm_at_pos(tensor: torch.Tensor, pos: int) -> float:
     return float(_tensor_at_pos(tensor, pos).norm().item())
+
+
+def _head_norm_at_pos(tensor: torch.Tensor, pos: int, head_idx: int) -> float:
+    return float(_head_tensor_at_pos(tensor, pos, head_idx).norm().item())
 
 
 def _decoder_row_for_raw_output(clt, src: int, tgt: int, feature_idx: int) -> torch.Tensor:
@@ -179,18 +209,40 @@ def _residual_node(layer: int, pos: int, norm: float) -> DeepTraceNode:
     )
 
 
-def _attention_node(layer: int, pos: int, norm: float) -> DeepTraceNode:
+def _attention_layer_node(layer: int, pos: int, norm: float) -> DeepTraceNode:
     return DeepTraceNode(
-        id=f"attention:L{layer}:P{pos}",
-        type="AttentionHeadNode",
+        id=f"attention_layer:L{layer}:P{pos}",
+        type="AttentionLayerNode",
         label=f"Attention L{layer} P{pos}",
         layer=layer,
         pos=pos,
         value=norm,
         metadata={
             "granularity": "layer_output",
-            "head_idx": None,
             "value": "norm(replacement_attention_output)",
+        },
+    )
+
+
+def _attention_head_node(
+    *,
+    layer: int,
+    pos: int,
+    head_idx: int,
+    norm: float,
+) -> DeepTraceNode:
+    return DeepTraceNode(
+        id=f"attention_head:L{layer}:H{head_idx}:P{pos}",
+        type="AttentionHeadNode",
+        label=f"Attention L{layer} H{head_idx} P{pos}",
+        layer=layer,
+        pos=pos,
+        value=norm,
+        metadata={
+            "granularity": "per_head_o_proj_contribution",
+            "head_idx": head_idx,
+            "value": "norm(o_proj(head_output))",
+            "bias_handling": "o_proj bias omitted from per-head split",
         },
     )
 
@@ -269,39 +321,100 @@ def _feature_decoder_residual_edges(
     return scored_edges[:per_feature_limit]
 
 
+def _feature_causal_residual_delta_edges(
+    *,
+    candidate: FeatureCandidate,
+    baseline_cache: DeepTraceCache,
+    intervened_cache: DeepTraceCache,
+    target_vector: torch.Tensor,
+    target_pos: int,
+    per_feature_limit: int,
+) -> list[DeepTraceEdge]:
+    scored_edges: list[DeepTraceEdge] = []
+    n_layers = len(baseline_cache.replacement.residual_inputs)
+
+    for layer in range(candidate.layer + 1, n_layers):
+        baseline = baseline_cache.replacement.residual_inputs[layer]
+        intervened = intervened_cache.replacement.residual_inputs[layer]
+        delta = intervened - baseline
+        score = _projection_score(delta, target_vector, target_pos)
+        delta_norm = _norm_at_pos(delta, target_pos)
+        scored_edges.append(
+            DeepTraceEdge(
+                source=candidate.node_id,
+                target=f"residual:L{layer}:P{target_pos}",
+                score=score,
+                kind="causal_feature_to_residual_delta",
+                metadata={
+                    "is_causal": True,
+                    "intervention": "set_feature_value_to_zero",
+                    "score_definition": (
+                        "dot(intervened_residual - replacement_residual, "
+                        "target_logit_direction)"
+                    ),
+                    "delta_norm": delta_norm,
+                },
+            )
+        )
+
+    scored_edges.sort(key=lambda edge: abs(edge.score), reverse=True)
+    return scored_edges[:per_feature_limit]
+
+
 def _causal_validation_for_candidate(
     *,
     replacement_model,
-    prompt: str,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor | None,
+    baseline_cache: DeepTraceCache,
     candidate: FeatureCandidate,
     positive_token_id: int,
     negative_token_id: int,
     target_pos: int,
+    target_vector: torch.Tensor,
+    feature_residual_edges_per_node: int,
 ) -> dict[str, Any]:
-    run = replacement_model.feature_intervention(
-        prompt,
-        [
-            FeatureIntervention(
-                layer=candidate.layer,
-                pos=candidate.pos,
-                feature_idx=candidate.feature_idx,
-                value=0.0,
+    intervened_cache = collect_deep_trace_cache(
+        model=replacement_model.base_model,
+        autoencoder=replacement_model.clt,
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        replacement_config=ReplacementConfig(
+            feature_interventions=(
+                FeatureIntervention(
+                    layer=candidate.layer,
+                    pos=candidate.pos,
+                    feature_idx=candidate.feature_idx,
+                    value=0.0,
+                ),
             )
-        ],
+        ),
+        original=baseline_cache.original,
     )
     replacement_score = logit_difference_score(
-        run["replacement_logits"],
+        baseline_cache.replacement.logits,
         positive_token_id=positive_token_id,
         negative_token_id=negative_token_id,
         target_pos=target_pos,
     )
     intervened_score = logit_difference_score(
-        run["intervened_logits"],
+        intervened_cache.replacement.logits,
         positive_token_id=positive_token_id,
         negative_token_id=negative_token_id,
         target_pos=target_pos,
     )
     causal_effect = intervened_score - replacement_score
+    residual_delta_edges = _feature_causal_residual_delta_edges(
+        candidate=candidate,
+        baseline_cache=baseline_cache,
+        intervened_cache=intervened_cache,
+        target_vector=target_vector,
+        target_pos=resolve_position(
+            target_pos,
+            baseline_cache.replacement.logits.shape[1],
+        ),
+        per_feature_limit=feature_residual_edges_per_node,
+    )
     return {
         "kind": "feature_ablation",
         "baseline_logits": "replacement_logits",
@@ -313,6 +426,15 @@ def _causal_validation_for_candidate(
             candidate.direct_score,
             causal_effect,
         ),
+        "residual_delta_edges": [
+            {
+                "target": edge.target,
+                "score": edge.score,
+                "kind": edge.kind,
+                "metadata": edge.metadata,
+            }
+            for edge in residual_delta_edges
+        ],
     }
 
 
@@ -320,11 +442,18 @@ def _cache_summary(
     cache: DeepTraceCache,
     target_pos: int,
 ) -> dict[str, Any]:
+    head_counts = [
+        0 if value is None else int(value.shape[2])
+        for value in cache.replacement.attention_head_outputs
+    ]
     return {
         "n_layers": len(cache.replacement.mlp_outputs),
         "target_pos": target_pos,
         "replacement_logits_shape": list(cache.replacement.logits.shape),
         "original_logits_shape": list(cache.original.logits.shape),
+        "attention_head_granularity": "per_head_o_proj_contribution",
+        "attention_heads_per_layer": head_counts,
+        "attention_head_nodes_available": sum(head_counts),
         "mean_mlp_error_norm": float(
             torch.tensor(
                 [
@@ -386,11 +515,15 @@ def build_deep_trace_graph(
     for candidate in candidates[:causal_top_k]:
         causal_payloads[candidate.node_id] = _causal_validation_for_candidate(
             replacement_model=replacement_model,
-            prompt=prompt,
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            baseline_cache=cache,
             candidate=candidate,
             positive_token_id=positive_token_id,
             negative_token_id=negative_token_id,
             target_pos=target_pos,
+            target_vector=target_vector,
+            feature_residual_edges_per_node=feature_residual_edges_per_node,
         )
 
     nodes: list[DeepTraceNode] = [_target_node(target.name, resolved_target_pos)]
@@ -398,7 +531,13 @@ def build_deep_trace_graph(
 
     for layer in range(replacement_model.clt.n_layers):
         residual = cache.replacement.residual_inputs[layer]
-        nodes.append(_residual_node(layer, resolved_target_pos, _norm_at_pos(residual, resolved_target_pos)))
+        nodes.append(
+            _residual_node(
+                layer,
+                resolved_target_pos,
+                _norm_at_pos(residual, resolved_target_pos),
+            )
+        )
         edges.append(
             DeepTraceEdge(
                 source=f"residual:L{layer}:P{resolved_target_pos}",
@@ -409,18 +548,82 @@ def build_deep_trace_graph(
             )
         )
 
-        attention = cache.replacement.attention_outputs[layer]
-        if attention is not None:
-            nodes.append(_attention_node(layer, resolved_target_pos, _norm_at_pos(attention, resolved_target_pos)))
-            edges.append(
-                DeepTraceEdge(
-                    source=f"attention:L{layer}:P{resolved_target_pos}",
-                    target=f"residual:L{layer}:P{resolved_target_pos}",
-                    score=_projection_score(attention, target_vector, resolved_target_pos),
-                    kind="attention_output_projection_proxy",
-                    metadata={"is_causal": False, "granularity": "layer_output"},
+        attention_heads = cache.replacement.attention_head_outputs[layer]
+        if attention_heads is not None:
+            for head_idx in range(attention_heads.shape[2]):
+                head_id = f"attention_head:L{layer}:H{head_idx}:P{resolved_target_pos}"
+                head_score = _head_projection_score(
+                    attention_heads,
+                    target_vector,
+                    resolved_target_pos,
+                    head_idx,
                 )
-            )
+                nodes.append(
+                    _attention_head_node(
+                        layer=layer,
+                        pos=resolved_target_pos,
+                        head_idx=head_idx,
+                        norm=_head_norm_at_pos(
+                            attention_heads,
+                            resolved_target_pos,
+                            head_idx,
+                        ),
+                    )
+                )
+                edges.append(
+                    DeepTraceEdge(
+                        source=head_id,
+                        target=f"residual:L{layer}:P{resolved_target_pos}",
+                        score=_head_norm_at_pos(
+                            attention_heads,
+                            resolved_target_pos,
+                            head_idx,
+                        ),
+                        kind="attention_head_o_proj_contribution",
+                        metadata={
+                            "is_causal": False,
+                            "granularity": "per_head_o_proj_contribution",
+                        },
+                    )
+                )
+                edges.append(
+                    DeepTraceEdge(
+                        source=head_id,
+                        target="target:0",
+                        score=head_score,
+                        kind="attention_head_projection_to_target_direction",
+                        metadata={
+                            "is_causal": False,
+                            "granularity": "per_head_o_proj_contribution",
+                        },
+                    )
+                )
+        else:
+            attention = cache.replacement.attention_outputs[layer]
+            if attention is not None:
+                nodes.append(
+                    _attention_layer_node(
+                        layer,
+                        resolved_target_pos,
+                        _norm_at_pos(attention, resolved_target_pos),
+                    )
+                )
+                edges.append(
+                    DeepTraceEdge(
+                        source=f"attention_layer:L{layer}:P{resolved_target_pos}",
+                        target=f"residual:L{layer}:P{resolved_target_pos}",
+                        score=_projection_score(
+                            attention,
+                            target_vector,
+                            resolved_target_pos,
+                        ),
+                        kind="attention_output_projection_proxy",
+                        metadata={
+                            "is_causal": False,
+                            "granularity": "layer_output_fallback",
+                        },
+                    )
+                )
 
         for kind, layernorms in [
             ("input", cache.replacement.input_layernorm_outputs),
@@ -491,13 +694,24 @@ def build_deep_trace_graph(
                     },
                 )
             )
-        edges.extend(
-            _feature_decoder_residual_edges(
-                clt=replacement_model.clt,
-                candidate=candidate,
-                per_feature_limit=feature_residual_edges_per_node,
+            for item in causal_payload.get("residual_delta_edges", []):
+                edges.append(
+                    DeepTraceEdge(
+                        source=candidate.node_id,
+                        target=str(item["target"]),
+                        score=float(item["score"]),
+                        kind=str(item["kind"]),
+                        metadata=dict(item["metadata"]),
+                    )
+                )
+        else:
+            edges.extend(
+                _feature_decoder_residual_edges(
+                    clt=replacement_model.clt,
+                    candidate=candidate,
+                    per_feature_limit=feature_residual_edges_per_node,
+                )
             )
-        )
 
     sign_matches = [
         payload["ablation_matches_direct_score_sign"]
@@ -506,10 +720,13 @@ def build_deep_trace_graph(
     ]
 
     metadata = {
-        "trace_kind": "deep_trace_stage1",
+        "trace_kind": "deep_trace_stage2",
         "is_full_circuit_tracing": False,
         "is_deeper_than_proxy_attribution": True,
-        "method": "replacement_conditioned_typed_trace_with_error_nodes",
+        "method": (
+            "replacement_conditioned_typed_trace_with_per_head_attention_"
+            "and_causal_residual_deltas"
+        ),
         "prompt": prompt,
         "target": {
             "positive": positive,

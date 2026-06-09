@@ -11,7 +11,7 @@ train CLT reconstruction baseline
 -> continue from checkpoint
 -> final low-LR continuation
 -> replacement model evaluation
--> Deep Trace stage 1 prompt suite
+-> Deep Trace stage 2 prompt suite
 ```
 
 ## Лучший checkpoint
@@ -69,7 +69,7 @@ src/qwen_clt/
   models/
   replacement/
   training/
-  deep_trace/
+  deep_trace/       # stage 2 typed trace with per-head attention nodes
   interventions/
   attribution/      # minimal target/fidelity/validation helpers for Deep Trace
   utils/
@@ -145,7 +145,9 @@ outputs/_backup/<timestamp>/
 
 ## Ограничение метода
 
-Deep Trace stage 1 глубже proxy attribution, потому что включает replacement
-cache, residual/layernorm/attention/error nodes и causal feature ablations.
-Но это ещё не full path attribution: attention представлен layer-level output,
-а feature-to-residual edges остаются decoder-write proxies.
+Deep Trace stage 2 глубже proxy attribution, потому что включает replacement
+cache, residual/layernorm/error nodes, per-head attention nodes и causal feature
+ablations. Attention decomposed at `o_proj` contribution level: это уже не
+только layer-level attention, но ещё не полный token-to-token attention path.
+Для top-k features feature-to-residual edges строятся через causal cache deltas;
+для остальных features остаются decoder-write proxy edges.

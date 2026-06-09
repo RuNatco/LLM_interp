@@ -120,6 +120,11 @@ def summarize_deep_trace_payload(
             "causal_ablation_effect",
             top_n=top_n,
         ),
+        "top_causal_residual_delta_edges": top_edges_by_kind(
+            payload,
+            "causal_feature_to_residual_delta",
+            top_n=top_n,
+        ),
         "top_direct_feature_edges": top_edges_by_kind(
             payload,
             "direct_decoder_write_to_logit_direction",

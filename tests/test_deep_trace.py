@@ -5,10 +5,16 @@ import torch
 import torch.nn as nn
 
 from qwen_clt.deep_trace.build import (
+    FeatureCandidate,
+    _feature_causal_residual_delta_edges,
     resolve_position,
     select_feature_candidates,
 )
-from qwen_clt.deep_trace.cache import QwenDeepTraceCollector
+from qwen_clt.deep_trace.cache import (
+    DeepTraceActivations,
+    DeepTraceCache,
+    QwenDeepTraceCollector,
+)
 from qwen_clt.deep_trace.graph import DeepTraceEdge, DeepTraceGraph, DeepTraceNode
 from qwen_clt.deep_trace.summary import summarize_deep_trace_payload
 from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
@@ -18,7 +24,7 @@ class DummyTraceLayer(nn.Module):
     def __init__(self, d_model: int):
         super().__init__()
         self.input_layernorm = nn.LayerNorm(d_model)
-        self.self_attn = nn.Linear(d_model, d_model, bias=False)
+        self.self_attn = DummySelfAttention(d_model=d_model, num_heads=2)
         self.post_attention_layernorm = nn.LayerNorm(d_model)
         self.mlp = nn.Linear(d_model, d_model, bias=False)
 
@@ -26,6 +32,19 @@ class DummyTraceLayer(nn.Module):
         x = x + self.self_attn(self.input_layernorm(x))
         x = x + self.mlp(self.post_attention_layernorm(x))
         return x
+
+
+class DummySelfAttention(nn.Module):
+    def __init__(self, d_model: int, num_heads: int):
+        super().__init__()
+        if d_model % num_heads != 0:
+            raise ValueError("d_model must be divisible by num_heads.")
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        self.o_proj = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x):
+        return self.o_proj(x)
 
 
 class DummyTraceBackbone(nn.Module):
@@ -118,6 +137,12 @@ def test_qwen_deep_trace_collector_on_dummy_qwen_like_model():
     assert trace.logits.shape == (1, 3, 16)
     assert len(trace.residual_inputs) == 2
     assert len(trace.attention_outputs) == 2
+    assert trace.attention_head_outputs[0].shape == (1, 3, 2, 4)
+    assert torch.allclose(
+        trace.attention_head_outputs[0].sum(dim=2),
+        trace.attention_outputs[0],
+        atol=1e-5,
+    )
     assert trace.mlp_outputs[0].shape == (1, 3, 4)
 
 
@@ -168,3 +193,67 @@ def test_deep_trace_summary_ranks_error_nodes_and_causal_edges():
 
     assert summary["top_mlp_error_nodes"][0]["id"] == "mlp_error:L1:P1"
     assert summary["top_causal_edges"][0]["source"] == "feature:L1:P1:F0"
+
+
+def _dummy_activations(residual_inputs: list[torch.Tensor]) -> DeepTraceActivations:
+    n_layers = len(residual_inputs)
+    logits = torch.zeros(1, 2, 8)
+    return DeepTraceActivations(
+        input_ids=torch.tensor([[1, 2]]),
+        attention_mask=None,
+        logits=logits,
+        residual_inputs=residual_inputs,
+        input_layernorm_outputs=[None] * n_layers,
+        attention_outputs=[None] * n_layers,
+        attention_head_outputs=[None] * n_layers,
+        post_attention_layernorm_outputs=[None] * n_layers,
+        mlp_inputs=[torch.zeros(1, 2, 3) for _ in range(n_layers)],
+        mlp_outputs=[torch.zeros(1, 2, 3) for _ in range(n_layers)],
+    )
+
+
+def test_causal_residual_delta_edges_use_intervened_minus_baseline():
+    baseline_residuals = [
+        torch.zeros(1, 2, 3),
+        torch.zeros(1, 2, 3),
+    ]
+    intervened_residuals = [
+        torch.zeros(1, 2, 3),
+        torch.tensor([[[0.0, 0.0, 0.0], [2.0, -1.0, 0.0]]]),
+    ]
+    baseline_acts = _dummy_activations(baseline_residuals)
+    intervened_acts = _dummy_activations(intervened_residuals)
+    baseline_cache = DeepTraceCache(
+        original=baseline_acts,
+        replacement=baseline_acts,
+        replacement_features=[None, None],
+        replacement_mlp_recons=[None, None],
+        replacement_errors=[None, None],
+    )
+    intervened_cache = DeepTraceCache(
+        original=baseline_acts,
+        replacement=intervened_acts,
+        replacement_features=[None, None],
+        replacement_mlp_recons=[None, None],
+        replacement_errors=[None, None],
+    )
+
+    edges = _feature_causal_residual_delta_edges(
+        candidate=FeatureCandidate(
+            layer=0,
+            pos=1,
+            feature_idx=7,
+            activation=1.0,
+            direct_score=0.5,
+        ),
+        baseline_cache=baseline_cache,
+        intervened_cache=intervened_cache,
+        target_vector=torch.tensor([1.0, 0.0, 0.0]),
+        target_pos=1,
+        per_feature_limit=1,
+    )
+
+    assert edges[0].kind == "causal_feature_to_residual_delta"
+    assert edges[0].target == "residual:L1:P1"
+    assert edges[0].score == 2.0
+    assert edges[0].metadata["is_causal"] is True

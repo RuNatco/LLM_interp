@@ -19,6 +19,7 @@ class DeepTraceActivations:
     residual_inputs: list[torch.Tensor]
     input_layernorm_outputs: list[torch.Tensor | None]
     attention_outputs: list[torch.Tensor | None]
+    attention_head_outputs: list[torch.Tensor | None]
     post_attention_layernorm_outputs: list[torch.Tensor | None]
     mlp_inputs: list[torch.Tensor]
     mlp_outputs: list[torch.Tensor]
@@ -58,12 +59,7 @@ def _get_layers(model: nn.Module):
 
 
 class QwenDeepTraceCollector:
-    """Collects a compact typed trace for Qwen-like decoder layers.
-
-    This collector keeps layer-level attention outputs. Per-head decomposition is
-    intentionally left for Deep Trace v2 because HF attention internals differ
-    across Qwen releases.
-    """
+    """Collects a compact typed trace for Qwen-like decoder layers."""
 
     def __init__(self, model: nn.Module):
         self.model = model
@@ -75,6 +71,7 @@ class QwenDeepTraceCollector:
         self.residual_inputs: list[torch.Tensor | None] = [None] * self.n_layers
         self.input_layernorm_outputs: list[torch.Tensor | None] = [None] * self.n_layers
         self.attention_outputs: list[torch.Tensor | None] = [None] * self.n_layers
+        self.attention_head_outputs: list[torch.Tensor | None] = [None] * self.n_layers
         self.post_attention_layernorm_outputs: list[torch.Tensor | None] = [
             None
         ] * self.n_layers
@@ -92,6 +89,63 @@ class QwenDeepTraceCollector:
     def _make_output_hook(self, store: list, layer_idx: int):
         def hook(module, inputs, output):
             store[layer_idx] = _first_tensor(output)
+
+        return hook
+
+    def _infer_attention_heads(self, attention_module, o_proj: nn.Module) -> tuple[int, int] | None:
+        n_heads = getattr(attention_module, "num_heads", None)
+        if n_heads is None:
+            n_heads = getattr(attention_module, "num_attention_heads", None)
+        if n_heads is None:
+            config = getattr(self.model, "config", None)
+            n_heads = getattr(config, "num_attention_heads", None)
+        if n_heads is None:
+            return None
+
+        n_heads = int(n_heads)
+        if n_heads <= 0:
+            return None
+
+        head_dim = getattr(attention_module, "head_dim", None)
+        in_features = int(o_proj.weight.shape[1])
+        if head_dim is None:
+            if in_features % n_heads != 0:
+                return None
+            head_dim = in_features // n_heads
+        head_dim = int(head_dim)
+
+        if n_heads * head_dim != in_features:
+            return None
+
+        return n_heads, head_dim
+
+    def _make_o_proj_hook(self, layer_idx: int, attention_module):
+        def hook(module, inputs, output):
+            if not inputs:
+                return
+
+            projected_input = inputs[0]
+            if projected_input.ndim != 3:
+                return
+
+            head_shape = self._infer_attention_heads(attention_module, module)
+            if head_shape is None:
+                return
+
+            n_heads, head_dim = head_shape
+            batch, seq_len, _ = projected_input.shape
+            head_values = projected_input.reshape(batch, seq_len, n_heads, head_dim)
+            head_weights = module.weight.reshape(
+                module.out_features,
+                n_heads,
+                head_dim,
+            )
+            head_outputs = torch.einsum(
+                "bshd,ohd->bsho",
+                head_values,
+                head_weights,
+            )
+            self.attention_head_outputs[layer_idx] = head_outputs
 
         return hook
 
@@ -130,6 +184,12 @@ class QwenDeepTraceCollector:
                         self._make_output_hook(self.attention_outputs, layer_idx)
                     )
                 )
+                if hasattr(layer.self_attn, "o_proj"):
+                    self.handles.append(
+                        layer.self_attn.o_proj.register_forward_hook(
+                            self._make_o_proj_hook(layer_idx, layer.self_attn)
+                        )
+                    )
 
             if hasattr(layer, "post_attention_layernorm"):
                 self.handles.append(
@@ -187,6 +247,10 @@ class QwenDeepTraceCollector:
                 None if value is None else _detach_tensor(value)
                 for value in self.attention_outputs
             ],
+            attention_head_outputs=[
+                None if value is None else _detach_tensor(value)
+                for value in self.attention_head_outputs
+            ],
             post_attention_layernorm_outputs=[
                 None if value is None else _detach_tensor(value)
                 for value in self.post_attention_layernorm_outputs
@@ -214,9 +278,11 @@ def collect_deep_trace_cache(
     input_ids: torch.Tensor,
     attention_mask: torch.Tensor | None,
     replacement_config: ReplacementConfig | None = None,
+    original: DeepTraceActivations | None = None,
 ) -> DeepTraceCache:
     collector = QwenDeepTraceCollector(model)
-    original = collector.run(input_ids=input_ids, attention_mask=attention_mask)
+    if original is None:
+        original = collector.run(input_ids=input_ids, attention_mask=attention_mask)
 
     config = replacement_config or ReplacementConfig()
     with LayerReplacementHook(
@@ -262,6 +328,7 @@ def _activation_payload(acts: DeepTraceActivations) -> dict[str, Any]:
         "residual_inputs": acts.residual_inputs,
         "input_layernorm_outputs": acts.input_layernorm_outputs,
         "attention_outputs": acts.attention_outputs,
+        "attention_head_outputs": acts.attention_head_outputs,
         "post_attention_layernorm_outputs": acts.post_attention_layernorm_outputs,
         "mlp_inputs": acts.mlp_inputs,
         "mlp_outputs": acts.mlp_outputs,
@@ -271,7 +338,7 @@ def _activation_payload(acts: DeepTraceActivations) -> dict[str, Any]:
 def save_deep_trace_cache(cache: DeepTraceCache, path: str | Path) -> None:
     save_checkpoint(
         {
-            "kind": "deep_trace_stage1_cache",
+            "kind": "deep_trace_stage2_cache",
             "original": _activation_payload(cache.original),
             "replacement": _activation_payload(cache.replacement),
             "replacement_features": cache.replacement_features,
