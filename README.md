@@ -22,6 +22,8 @@ configs/
   qwen2_5_0_5b_base_clt_late_target_v2.yaml
   qwen2_5_0_5b_base_clt_late_target_v3.yaml
   qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml
   qwen2_5_0_5b_instruct_clt_v0.yaml
   qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
 
@@ -306,16 +308,20 @@ logit(" increase") - logit(" decrease")
 Поэтому target direction теперь используется как eval/validation metric, а не
 как training loss.
 
-Следующий общий fidelity run:
+Общие fidelity runs:
 
 ```text
 configs/qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 ```
 
-Он не использует target-loss, logit distillation или normalization. Вместо
-этого он увеличивает `features_per_layer` до `1536`, снижает sparsity weight
-до `0.00001`, увеличивает training budget до `15000` optimizer steps и
-проверяет, можно ли улучшить replacement fidelity более общей реконструкцией.
+Они не используют target-loss, logit distillation или normalization. Вместо
+этого они увеличивают CLT capacity, снижают sparsity weight до `0.00001`,
+увеличивают training budget до `15000` optimizer steps и проверяют, можно ли
+улучшить replacement fidelity более общей реконструкцией. `recon_fidelity_v2`
+с `features_per_layer: 2048` стал текущим лучшим replacement baseline.
+`recon_fidelity_v2_continue_v1` дообучает этот checkpoint ещё 5000 шагов через
+`training.init_from_checkpoint`, сохраняя результат в отдельный output dir.
 
 ## Установка
 

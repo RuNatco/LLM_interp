@@ -157,6 +157,29 @@ def layer_loss_weights_from_config(
     return weights
 
 
+def load_initial_clt_weights(
+    clt: CrossLayerTranscoder,
+    checkpoint_path: str | Path,
+) -> dict:
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Initial CLT checkpoint not found: {checkpoint_path}")
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    if not isinstance(checkpoint, dict):
+        raise TypeError(
+            f"Expected checkpoint dict at {checkpoint_path}, got {type(checkpoint)}."
+        )
+    if "model_state_dict" not in checkpoint:
+        raise KeyError(
+            f"Checkpoint {checkpoint_path} has no 'model_state_dict'. "
+            f"Available keys: {list(checkpoint.keys())}"
+        )
+
+    clt.load_state_dict(checkpoint["model_state_dict"], strict=True)
+    return checkpoint
+
+
 def train_clt(cfg: dict) -> Path:
     seed = int(cfg["training"].get("seed", 42))
     set_seed(seed)
@@ -177,31 +200,38 @@ def train_clt(cfg: dict) -> Path:
         **clt_normalization_kwargs(clt_cfg),
     ).to(device)
 
+    training_cfg = cfg["training"]
+    init_checkpoint_path = training_cfg.get("init_from_checkpoint")
+    init_checkpoint = None
+    if init_checkpoint_path:
+        init_checkpoint = load_initial_clt_weights(clt, init_checkpoint_path)
+        clt.to(device)
+
     optimizer = torch.optim.AdamW(
         clt.parameters(),
-        lr=float(cfg["training"]["lr"]),
-        weight_decay=float(cfg["training"].get("weight_decay", 0.0)),
+        lr=float(training_cfg["lr"]),
+        weight_decay=float(training_cfg.get("weight_decay", 0.0)),
     )
 
-    grad_accum = int(cfg["training"].get("gradient_accumulation_steps", 1))
+    grad_accum = int(training_cfg.get("gradient_accumulation_steps", 1))
     if grad_accum <= 0:
         raise ValueError(
             f"gradient_accumulation_steps must be positive. Got {grad_accum}."
         )
 
     max_optimizer_steps, max_micro_steps = resolve_step_limits(
-        cfg["training"],
+        training_cfg,
         grad_accum=grad_accum,
     )
-    log_every = int(cfg["training"].get("log_every", 50))
-    save_every = int(cfg["training"].get("save_every", 1000))
-    keep_last_checkpoints = int(cfg["training"].get("keep_last_checkpoints", 0))
-    lambda_sparsity = float(cfg["training"].get("lambda_sparsity", 1e-4))
-    sparsity_c = float(cfg["training"].get("sparsity_c", 1.0))
-    grad_clip = float(cfg["training"].get("grad_clip_norm", 1.0))
-    distill_cfg = cfg["training"].get("logit_distillation", {}) or {}
+    log_every = int(training_cfg.get("log_every", 50))
+    save_every = int(training_cfg.get("save_every", 1000))
+    keep_last_checkpoints = int(training_cfg.get("keep_last_checkpoints", 0))
+    lambda_sparsity = float(training_cfg.get("lambda_sparsity", 1e-4))
+    sparsity_c = float(training_cfg.get("sparsity_c", 1.0))
+    grad_clip = float(training_cfg.get("grad_clip_norm", 1.0))
+    distill_cfg = training_cfg.get("logit_distillation", {}) or {}
     lambda_logit_distillation = float(distill_cfg.get("weight", 0.0))
-    target_loss_cfg = cfg["training"].get("target_logit_diff_loss", {}) or {}
+    target_loss_cfg = training_cfg.get("target_logit_diff_loss", {}) or {}
     lambda_target_logit_diff = float(target_loss_cfg.get("weight", 0.0))
     target_token_ids = None
     if bool(target_loss_cfg.get("enabled", False)):
@@ -212,7 +242,7 @@ def train_clt(cfg: dict) -> Path:
             single_token_id(tokenizer, target_negative),
         )
     layer_loss_weights = layer_loss_weights_from_config(
-        cfg["training"],
+        training_cfg,
         n_layers=int(clt_cfg["n_layers"]),
     )
 
@@ -375,6 +405,12 @@ def train_clt(cfg: dict) -> Path:
                             "step": optimizer_step,
                             "optimizer_step": optimizer_step,
                             "micro_step": micro_step,
+                            "init_from_checkpoint": str(init_checkpoint_path)
+                            if init_checkpoint_path
+                            else None,
+                            "init_checkpoint_step": init_checkpoint.get("step")
+                            if init_checkpoint
+                            else None,
                         },
                         ckpt_path,
                     )
@@ -395,6 +431,12 @@ def train_clt(cfg: dict) -> Path:
             "step": optimizer_step,
             "optimizer_step": optimizer_step,
             "micro_step": micro_step,
+            "init_from_checkpoint": str(init_checkpoint_path)
+            if init_checkpoint_path
+            else None,
+            "init_checkpoint_step": init_checkpoint.get("step")
+            if init_checkpoint
+            else None,
         },
         final_path,
     )

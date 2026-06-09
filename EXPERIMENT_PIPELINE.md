@@ -809,3 +809,92 @@ python scripts/09_build_deep_trace_prompt_suite.py \
   --top-error-nodes 8 \
   --causal-top-k 8
 ```
+
+## 14. Base Reconstruction Fidelity v2
+
+Use this after `base_clt_recon_fidelity_v1` improves over `base_clt_fidelity_v2`.
+This run keeps the same general reconstruction objective and increases CLT
+capacity:
+
+```text
+features_per_layer: 1536 -> 2048
+```
+
+Train:
+
+```bash
+python scripts/01_train_clt.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
+```
+
+Evaluate:
+
+```bash
+python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
+```
+
+Inspect:
+
+```bash
+cat outputs/base_clt_recon_fidelity_v2/replacement_eval_metrics.json
+```
+
+Primary comparison targets:
+
+```text
+Compare against base_clt_recon_fidelity_v1:
+  kl_div:                    below 1.581
+  last_token_kl_div:         below 1.560
+  top1_agreement:            above 0.421
+  last_token_top1_agreement: above 0.332
+  target_logit_diff_mae:     below 0.597
+```
+
+Build Deep Trace on this checkpoint as the current best baseline:
+
+```bash
+python scripts/09_build_deep_trace_prompt_suite.py \
+  --checkpoint outputs/base_clt_recon_fidelity_v2/clt_final.pt \
+  --output-dir outputs/base_clt_recon_fidelity_v2/deep_trace_suite \
+  --summary-output outputs/base_clt_recon_fidelity_v2/deep_trace_suite_summary.json \
+  --max-feature-nodes 64 \
+  --top-error-nodes 8 \
+  --causal-top-k 8
+```
+
+## 15. Continue Reconstruction Fidelity v2
+
+Use this when `base_clt_recon_fidelity_v2` is the current best checkpoint and
+you want to continue training from its weights without overwriting the original
+output directory. This is an initialization-from-checkpoint fine-tune, not a
+full optimizer-state resume.
+
+Train for 5000 additional optimizer steps with a smaller learning rate:
+
+```bash
+python scripts/01_train_clt.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml
+```
+
+Evaluate:
+
+```bash
+python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml
+```
+
+Inspect:
+
+```bash
+cat outputs/base_clt_recon_fidelity_v2_continue_v1/replacement_eval_metrics.json
+```
+
+Compare against `base_clt_recon_fidelity_v2`:
+
+```text
+kl_div should stay below 1.496 or improve.
+last_token_kl_div should stay below 1.427 or improve.
+last_token_top1_agreement should stay above 0.369 or improve.
+target_logit_diff_mae should stay below 0.579 or improve.
+```

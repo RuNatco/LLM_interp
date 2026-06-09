@@ -1,5 +1,6 @@
 import torch
 from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
+from qwen_clt.training.train_clt import load_initial_clt_weights
 
 
 def test_clt_shapes():
@@ -64,3 +65,27 @@ def test_decoder_row_for_raw_output_scales_target_normalized_decoder():
     row = clt.decoder_row_for_raw_output(src=0, tgt=0, feature_idx=0)
 
     assert torch.allclose(row, torch.tensor([1.0, -6.0]), atol=1e-4)
+
+
+def test_load_initial_clt_weights_loads_checkpoint_state(tmp_path):
+    source = CrossLayerTranscoder(n_layers=1, d_model=2, features_per_layer=1)
+    target = CrossLayerTranscoder(n_layers=1, d_model=2, features_per_layer=1)
+
+    with torch.no_grad():
+        source.encoder_bias[0].fill_(3.0)
+        target.encoder_bias[0].zero_()
+
+    checkpoint_path = tmp_path / "clt_final.pt"
+    torch.save(
+        {
+            "cfg": {"clt": {"n_layers": 1, "d_model": 2, "features_per_layer": 1}},
+            "model_state_dict": source.state_dict(),
+            "step": 7,
+        },
+        checkpoint_path,
+    )
+
+    checkpoint = load_initial_clt_weights(target, checkpoint_path)
+
+    assert checkpoint["step"] == 7
+    assert torch.allclose(target.encoder_bias[0], torch.full((1,), 3.0))
