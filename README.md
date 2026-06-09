@@ -24,6 +24,7 @@ configs/
   qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
   qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
   qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml
   qwen2_5_0_5b_instruct_clt_v0.yaml
   qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
 
@@ -322,6 +323,8 @@ configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 с `features_per_layer: 2048` стал текущим лучшим replacement baseline.
 `recon_fidelity_v2_continue_v1` дообучает этот checkpoint ещё 5000 шагов через
 `training.init_from_checkpoint`, сохраняя результат в отдельный output dir.
+`recon_fidelity_v2_continue_v2` продолжает уже от `continue_v1` ещё 3000 шагов
+с `lr: 0.00005`.
 
 ## Установка
 

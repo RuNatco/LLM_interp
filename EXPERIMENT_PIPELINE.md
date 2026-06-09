@@ -898,3 +898,39 @@ last_token_kl_div should stay below 1.427 or improve.
 last_token_top1_agreement should stay above 0.369 or improve.
 target_logit_diff_mae should stay below 0.579 or improve.
 ```
+
+## 16. Continue Reconstruction Fidelity v2 Again
+
+Use this after `base_clt_recon_fidelity_v2_continue_v1` improves fidelity. This
+run starts from the continued checkpoint, lowers the learning rate again, and
+uses a shorter budget to reduce overfitting risk.
+
+Train:
+
+```bash
+python scripts/01_train_clt.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml
+```
+
+Evaluate:
+
+```bash
+python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml
+```
+
+Inspect:
+
+```bash
+cat outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
+```
+
+Compare against `base_clt_recon_fidelity_v2_continue_v1`:
+
+```text
+kl_div should stay below 1.380 or improve.
+last_token_kl_div should stay below 1.228 or improve.
+last_token_top1_agreement should stay above 0.541 or improve.
+target_logit_diff_mae should stay below 0.541 or improve.
+last_token_logit_mse should not regress much further.
+```
