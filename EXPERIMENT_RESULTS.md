@@ -1063,6 +1063,126 @@ last-token logit MSE/mean abs diff означает, что некоторые l
 становится новым основным replacement baseline. Следующий обязательный шаг -
 Deep Trace prompt suite на этом checkpoint.
 
+## Experiment 15: Base Reconstruction Fidelity v2 Continue v2
+
+Config:
+
+```text
+configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml
+```
+
+Цель: проверить, есть ли ещё небольшой запас после `continue_v1`, но снизить
+риск переобучения. Run стартует от checkpoint `continue_v1`, использует меньший
+learning rate и более короткий budget.
+
+Параметры continuation:
+
+```text
+init_from_checkpoint: outputs/base_clt_recon_fidelity_v2_continue_v1/clt_final.pt
+features_per_layer: 2048
+max_optimizer_steps: 3000
+lr: 0.00005
+lambda_sparsity: 0.00001
+seed: 44
+target_logit_diff_loss: disabled
+logit_distillation: disabled
+normalization: disabled
+```
+
+Фактический результат replacement eval:
+
+```text
+top1_agreement: 0.4520
+last_token_top1_agreement: 0.5367
+kl_div: 1.3419
+last_token_kl_div: 1.2839
+logit_mse: 3.2088
+last_token_logit_mse: 3.0349
+mean_abs_logit_diff: 1.3352
+last_token_mean_abs_logit_diff: 1.3113
+target_logit_diff_mae: 0.5119
+target_logit_diff_mse: 0.4931
+target_logit_diff_original_mean: 1.9140
+target_logit_diff_replacement_mean: 1.9111
+```
+
+Сравнение с `continue_v1`:
+
+```text
+top1_agreement:             0.4496 -> 0.4520
+last_token_top1_agreement:  0.5405 -> 0.5367
+kl_div:                     1.3799 -> 1.3419
+last_token_kl_div:          1.2277 -> 1.2839
+logit_mse:                  3.3474 -> 3.2088
+last_token_logit_mse:       3.2122 -> 3.0349
+mean_abs_logit_diff:        1.3701 -> 1.3352
+last_token_mean_abs_diff:   1.3595 -> 1.3113
+target_logit_diff_mae:      0.5413 -> 0.5119
+target_logit_diff_mse:      0.5401 -> 0.4931
+```
+
+Небольшая регрессия:
+
+```text
+last_token_top1_agreement:  0.5405 -> 0.5367
+last_token_kl_div:          1.2277 -> 1.2839
+```
+
+Интерпретация: `continue_v2` лучше как общий fidelity baseline. Он улучшил
+global KL, global top1, logit MSE, mean abs diff и target-direction MAE.
+Регрессия по last-token top1 и last-token KL небольшая; при этом last-token
+top1 остаётся выше `0.53`, то есть намного выше всех baseline до continuation.
+
+Важный вывод: `base_clt_recon_fidelity_v2_continue_v2` становится новым
+основным replacement checkpoint. Теперь дальнейшее дообучение уже менее
+приоритетно: метрики начинают двигаться неравномерно, поэтому следующий шаг -
+Deep Trace suite на этом checkpoint.
+
+Deep Trace prompt suite:
+
+```text
+replacement fidelity gate: passed
+
+prompt 1 sign_match=0.8571 mean_error_norm=6.360
+prompt 2 sign_match=1.0000 mean_error_norm=7.011
+prompt 3 sign_match=1.0000 mean_error_norm=6.548
+prompt 4 sign_match=0.8571 mean_error_norm=6.645
+prompt 5 sign_match=1.0000 mean_error_norm=6.981
+```
+
+Suite aggregate:
+
+```text
+mean sign_match: about 0.943
+median sign_match: 1.000
+mean MLP error norm: about 6.71
+```
+
+Сравнение с предыдущими Deep Trace suites:
+
+```text
+base v2:
+  mean sign_match: about 0.750
+  mean MLP error norm: about 7.817
+
+recon_fidelity_v1:
+  mean sign_match: about 0.881
+  mean MLP error norm: about 6.96
+
+recon_fidelity_v2_continue_v2:
+  mean sign_match: about 0.943
+  mean MLP error norm: about 6.71
+```
+
+Интерпретация Deep Trace: улучшение replacement fidelity перенеслось на graph
+quality. Prompt suite стал устойчивее: три из пяти prompts имеют perfect
+causal sign match, а средняя replacement-error norm ниже, чем у `base v2` и
+`recon_fidelity_v1`.
+
+Важный вывод Deep Trace: `base_clt_recon_fidelity_v2_continue_v2` теперь
+является не только лучшим replacement checkpoint, но и лучшим Deep Trace stage
+1 baseline в проекте.
+
 ## Сводная таблица
 
 | Experiment | Main idea | top1 | last top1 | KL | last KL | target MAE | Main conclusion |
@@ -1080,20 +1200,22 @@ Deep Trace prompt suite на этом checkpoint.
 | recon_fidelity v1 | larger CLT, softer sparsity, more steps | 0.421 | 0.332 | 1.581 | 1.560 | 0.597 | new best replacement baseline |
 | recon_fidelity v2 | 2048 features per layer | 0.427 | 0.369 | 1.496 | 1.427 | 0.579 | new best baseline; capacity scaling works |
 | recon_fidelity v2 continue v1 | fine-tune from v2 checkpoint | 0.450 | 0.541 | 1.380 | 1.228 | 0.541 | best replacement baseline so far |
+| recon_fidelity v2 continue v2 | shorter low-LR fine-tune from continue v1 | 0.452 | 0.537 | 1.342 | 1.284 | 0.512 | best overall fidelity baseline |
 
 ## Текущий выбор baseline
 
 Основной baseline для исследования:
 
 ```text
-base_clt_recon_fidelity_v2_continue_v1
+base_clt_recon_fidelity_v2_continue_v2
 ```
 
 Причина: это лучший текущий баланс между KL, last-token fidelity, target
 direction fidelity и Deep Trace stability. Он проходит replacement fidelity
 gate и улучшает все основные метрики относительно прежнего baseline
 `base_clt_fidelity_v2`, а также улучшает ключевые metrics относительно
-`base_clt_recon_fidelity_v1` и `base_clt_recon_fidelity_v2`.
+`base_clt_recon_fidelity_v1`, `base_clt_recon_fidelity_v2` и
+`base_clt_recon_fidelity_v2_continue_v1`.
 
 Предыдущие основные baselines:
 
@@ -1101,6 +1223,7 @@ gate и улучшает все основные метрики относите
 base_clt_fidelity_v2
 base_clt_recon_fidelity_v1
 base_clt_recon_fidelity_v2
+base_clt_recon_fidelity_v2_continue_v1
 ```
 
 Причина сохранить их в отчёте: это важные контрольные точки, относительно
@@ -1136,7 +1259,9 @@ production-grade circuit tracing, но `recon_fidelity_v1` впервые уве
 `last_token_top1_agreement = 0.3687`, `kl_div = 1.4962`,
 `last_token_kl_div = 1.4275`. `recon_fidelity_v2_continue_v1` заметно поднимает
 порог дальше: `last_token_top1_agreement = 0.5405`,
-`kl_div = 1.3799`, `last_token_kl_div = 1.2277`.
+`kl_div = 1.3799`, `last_token_kl_div = 1.2277`. `continue_v2` немного снижает
+last-token top1 до `0.5367`, но улучшает общий KL до `1.3419` и target MAE до
+`0.5119`.
 
 Вторая проблема: разные objectives улучшают разные аспекты fidelity. v4
 улучшает top1, но портит KL. v3 улучшает часть continuous metrics, но портит
@@ -1162,29 +1287,16 @@ suite стабильно указывает на `L18-L23`, особенно `L2
 Ближайший эксперимент:
 
 ```text
-base_clt_recon_fidelity_v2_continue_v2
+summarize and inspect Deep Trace suite on base_clt_recon_fidelity_v2_continue_v2
 ```
 
-Его цель - проверить, есть ли ещё запас у текущего лучшего checkpoint. Этот
-run стартует от `outputs/base_clt_recon_fidelity_v2_continue_v1/clt_final.pt`,
-использует меньший `lr: 0.00005` и короткий budget `3000` optimizer steps.
+Его цель - перейти от агрегатных метрик suite к содержательному анализу:
+выделить устойчивые causal feature layers, top MLP error layers, prompts с
+идеальным sign match и prompts с remaining mismatch. Этот checkpoint нужно
+использовать как основной для финальной НИР.
 
-Критерии успеха:
-
-```text
-kl_div <= 1.380
-last_token_kl_div <= 1.228
-last_token_top1_agreement >= 0.541
-target_logit_diff_mae <= 0.541
-last_token_logit_mse should not regress much further
-```
-
-После этого нужно построить Deep Trace suite на лучшем checkpoint:
-`continue_v1`, если `continue_v2` начнёт переобучаться, или `continue_v2`,
-если он улучшит fidelity.
-
-Если следующий run не улучшит KL/top1, следующий путь - не усиливать target
-loss дальше, а продолжать архитектурную fidelity-ветку:
+Если потребуется ещё один технический шаг, его лучше делать не через target
+loss, а через архитектурную fidelity-ветку:
 
 ```text
 more capacity

@@ -320,11 +320,12 @@ configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 этого они увеличивают CLT capacity, снижают sparsity weight до `0.00001`,
 увеличивают training budget до `15000` optimizer steps и проверяют, можно ли
 улучшить replacement fidelity более общей реконструкцией. `recon_fidelity_v2`
-с `features_per_layer: 2048` стал текущим лучшим replacement baseline.
+с `features_per_layer: 2048` стал сильным baseline для continuation.
 `recon_fidelity_v2_continue_v1` дообучает этот checkpoint ещё 5000 шагов через
 `training.init_from_checkpoint`, сохраняя результат в отдельный output dir.
 `recon_fidelity_v2_continue_v2` продолжает уже от `continue_v1` ещё 3000 шагов
-с `lr: 0.00005`.
+с `lr: 0.00005` и является текущим лучшим replacement baseline. Его Deep Trace
+prompt suite прошёл fidelity gate и дал mean sign match около `0.943`.
 
 ## Установка
 

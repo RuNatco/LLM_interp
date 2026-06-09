@@ -934,3 +934,26 @@ last_token_top1_agreement should stay above 0.541 or improve.
 target_logit_diff_mae should stay below 0.541 or improve.
 last_token_logit_mse should not regress much further.
 ```
+
+## 17. Deep Trace On Best Reconstruction Checkpoint
+
+Use this after `base_clt_recon_fidelity_v2_continue_v2` becomes the current
+best replacement baseline.
+
+Build the prompt suite:
+
+```bash
+python scripts/09_build_deep_trace_prompt_suite.py \
+  --checkpoint outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt \
+  --output-dir outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite \
+  --summary-output outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json \
+  --max-feature-nodes 64 \
+  --top-error-nodes 8 \
+  --causal-top-k 8
+```
+
+Inspect the JSON summary:
+
+```bash
+cat outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json
+```
