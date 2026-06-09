@@ -1,5 +1,8 @@
 # Experiment pipeline
 
+This file keeps the full experiment history. For the final best run, use
+`FINAL_TRAINING_PIPELINE.md` and `scripts/11_run_final_training_pipeline.sh`.
+
 Run these commands from the project root:
 
 ```bash

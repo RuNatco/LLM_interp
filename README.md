@@ -8,9 +8,17 @@
 Цель проекта: воспроизвести ключевую идею circuit tracing baseline:  
 **Qwen → MLP inputs/outputs → CLT → replacement model → attribution graph → feature interventions**.
 
+Итоговый маршрут с лучшим checkpoint и backup-командами описан в
+`FINAL_TRAINING_PIPELINE.md`. Полная история экспериментов — в
+`EXPERIMENT_RESULTS.md`.
+
 ## Структура
 
 ```text
+FINAL_TRAINING_PIPELINE.md
+EXPERIMENT_RESULTS.md
+EXPERIMENT_PIPELINE.md
+
 configs/
   qwen2_5_0_5b_base_clt_v0.yaml
   qwen2_5_0_5b_base_clt_fidelity_v1.yaml
@@ -69,6 +77,8 @@ scripts/
   07_build_deep_trace_graph.py
   08_summarize_deep_trace_graph.py
   09_build_deep_trace_prompt_suite.py
+  10_backup_intermediate_outputs.sh
+  11_run_final_training_pipeline.sh
 ```
 
 ## Replacement abstractions
@@ -326,6 +336,18 @@ configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 `recon_fidelity_v2_continue_v2` продолжает уже от `continue_v1` ещё 3000 шагов
 с `lr: 0.00005` и является текущим лучшим replacement baseline. Его Deep Trace
 prompt suite прошёл fidelity gate и дал mean sign match около `0.943`.
+
+Финальный воспроизводимый маршрут вынесен отдельно:
+
+```bash
+bash scripts/11_run_final_training_pipeline.sh --backup-intermediate
+```
+
+Если лучший checkpoint уже обучен и нужно только пересчитать eval / Deep Trace:
+
+```bash
+bash scripts/11_run_final_training_pipeline.sh --skip-train --backup-intermediate
+```
 
 ## Установка
 
