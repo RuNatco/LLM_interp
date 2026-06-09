@@ -21,6 +21,7 @@ configs/
   qwen2_5_0_5b_base_clt_late_target_v1.yaml
   qwen2_5_0_5b_base_clt_late_target_v2.yaml
   qwen2_5_0_5b_base_clt_late_target_v3.yaml
+  qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
   qwen2_5_0_5b_instruct_clt_v0.yaml
   qwen2_5_0_5b_instruct_clt_fidelity_v2.yaml
 
@@ -300,10 +301,21 @@ logit(" increase") - logit(" decrease")
 ```
 
 `late_target_v2` с `weight: 0.02` показал negative result: target MAE слегка
-улучшился, но global replacement fidelity разрушилась. Поэтому следующий
-эксперимент `late_target_v3` делает target-loss очень слабым и редким:
-`weight: 0.001`, `every_n_micro_steps: 10`. Цель — проверить target-direction
-bias без разрушения KL/top1.
+улучшился, но global replacement fidelity разрушилась. `late_target_v3` с
+`weight: 0.001`, `every_n_micro_steps: 10` тоже ухудшил fidelity и target MAE.
+Поэтому target direction теперь используется как eval/validation metric, а не
+как training loss.
+
+Следующий общий fidelity run:
+
+```text
+configs/qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+```
+
+Он не использует target-loss, logit distillation или normalization. Вместо
+этого он увеличивает `features_per_layer` до `1536`, снижает sparsity weight
+до `0.00001`, увеличивает training budget до `15000` optimizer steps и
+проверяет, можно ли улучшить replacement fidelity более общей реконструкцией.
 
 ## Установка
 

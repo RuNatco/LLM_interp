@@ -744,3 +744,68 @@ kl_div should stay near 2-3, not jump toward late_target_v2's ~15.
 last_token_top1_agreement should stay near 0.28-0.30 or better.
 top1_agreement should not collapse below 0.30.
 ```
+
+## 13. Base Reconstruction Fidelity v1
+
+Use this after target-loss runs show that single-direction logit supervision
+hurts replacement fidelity. This run returns to general reconstruction quality:
+more CLT capacity, softer sparsity, more data, more optimizer steps, and no
+target-aware/logit-distillation objectives.
+
+Train:
+
+```bash
+python scripts/01_train_clt.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+```
+
+Evaluate:
+
+```bash
+python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+```
+
+Inspect:
+
+```bash
+cat outputs/base_clt_recon_fidelity_v1/replacement_eval_metrics.json
+```
+
+Primary comparison targets:
+
+```text
+Compare against base_clt_fidelity_v2:
+  kl_div:                    below 2.003
+  last_token_kl_div:         at or below 2.007
+  top1_agreement:            above 0.359
+  last_token_top1_agreement: above 0.292, ideally above 0.30
+  target_logit_diff_mae:     at or below 0.627
+```
+
+Build Deep Trace only if replacement fidelity improves or at least holds:
+
+```bash
+python scripts/07_build_deep_trace_graph.py \
+  --checkpoint outputs/base_clt_recon_fidelity_v1/clt_final.pt \
+  --prompt "Demand is greater than generation, so the price will" \
+  --positive " increase" \
+  --negative " decrease" \
+  --max-feature-nodes 64 \
+  --top-error-nodes 8 \
+  --causal-top-k 8 \
+  --output outputs/base_clt_recon_fidelity_v1/price_deep_trace.json \
+  --cache-output outputs/base_clt_recon_fidelity_v1/price_deep_trace_cache.pt
+```
+
+Then run the prompt suite:
+
+```bash
+python scripts/09_build_deep_trace_prompt_suite.py \
+  --checkpoint outputs/base_clt_recon_fidelity_v1/clt_final.pt \
+  --output-dir outputs/base_clt_recon_fidelity_v1/deep_trace_suite \
+  --summary-output outputs/base_clt_recon_fidelity_v1/deep_trace_suite_summary.json \
+  --max-feature-nodes 64 \
+  --top-error-nodes 8 \
+  --causal-top-k 8
+```

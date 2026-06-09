@@ -749,7 +749,7 @@ model почти полностью потеряла общий logit landscape.
 оказался слишком агрессивным, если применять его в полном replacement forward
 на каждом micro-step.
 
-## Planned Experiment 11: Base Late-Layer Tiny Target Loss v3
+## Experiment 11: Base Late-Layer Tiny Target Loss v3
 
 Config:
 
@@ -773,20 +773,95 @@ single-direction градиенте, то tiny target-loss должен сохр
 примерно на уровне late-layer reconstruction run и дать лишь небольшой bias в
 сторону target direction.
 
+Фактический результат replacement eval:
+
+```text
+top1_agreement: 0.0748
+last_token_top1_agreement: 0.0116
+kl_div: 5.3412
+last_token_kl_div: 5.5657
+logit_mse: 9.1344
+last_token_logit_mse: 9.5493
+mean_abs_logit_diff: 2.3751
+last_token_mean_abs_logit_diff: 2.4632
+target_logit_diff_mae: 0.9751
+target_logit_diff_mse: 1.5609
+target_logit_diff_original_mean: 1.9140
+target_logit_diff_replacement_mean: 1.8749
+```
+
+Сравнение с `base v2`:
+
+```text
+base v2 top1_agreement: 0.3588
+late_target_v3 top1_agreement: 0.0748
+
+base v2 last_token_top1_agreement: 0.2915
+late_target_v3 last_token_top1_agreement: 0.0116
+
+base v2 kl_div: 2.0033
+late_target_v3 kl_div: 5.3412
+
+base v2 target_logit_diff_mae: 0.6271
+late_target_v3 target_logit_diff_mae: 0.9751
+```
+
+Интерпретация: даже очень слабый и редкий target-loss не оказался безопасным.
+Он уже не разрушил модель так катастрофически, как `late_target_v2`, но всё
+равно сильно ухудшил global replacement fidelity и одновременно ухудшил
+target-direction MAE. Это закрывает single-direction target-loss как
+практичный training objective для текущей CLT setup.
+
+Важный вывод: target direction нужно оставить как evaluation/validation
+metric, а не использовать как training loss. Дальше следует улучшать
+reconstruction fidelity общими методами.
+
+## Planned Experiment 12: Base Reconstruction Fidelity v1
+
+Config:
+
+```text
+configs/qwen2_5_0_5b_base_clt_recon_fidelity_v1.yaml
+```
+
+Цель: вернуться от target-specific objectives к общей fidelity replacement
+model. Этот эксперимент не использует target-aware loss, logit distillation
+или normalization. Он проверяет более простой путь: больше CLT capacity,
+мягче sparsity, больше данных и больше optimizer steps.
+
+Изменение относительно `base_clt_fidelity_v2`:
+
+```text
+features_per_layer: 1024 -> 1536
+max_optimizer_steps: 10000 -> 15000
+max_train_tokens: 25000000 -> 50000000
+lambda_sparsity: 0.00002 -> 0.00001
+lr: 0.0003 -> 0.0002
+target_logit_diff_loss: disabled
+logit_distillation: disabled
+normalization: disabled
+```
+
+Гипотеза: если основная проблема v2 - нехватка capacity и слишком жёсткая
+sparsity, то larger sparse reconstruction model должна улучшить KL/logit MSE
+без разрушения top1 и без переоптимизации одного target direction.
+
 Критерии успеха:
 
 ```text
-kl_div <= 2.5
-last_token_kl_div <= 2.5
-last_token_top1_agreement near 0.28-0.30 or better
-target_logit_diff_mae <= 0.6271
-top1_agreement should not collapse below 0.30
+kl_div < 2.0
+last_token_kl_div <= 2.0
+top1_agreement >= 0.36
+last_token_top1_agreement >= 0.30
+mean_abs_logit_diff < 1.64
+target_logit_diff_mae <= 0.627
 ```
 
-Если v3 снова разрушит KL/top1, target-aware loss нужно временно убрать из
-основной линии экспериментов и возвращаться к более общей fidelity:
-capacity, sparsity, late-layer capacity allocation и replacement-conditioned
-training.
+Если этот run улучшит global fidelity, его стоит использовать как новый
+основной replacement baseline и строить Deep Trace suite уже на нём. Если
+качество не улучшится, следующий общий шаг - не target loss, а ещё более
+крупная capacity или architectural optimization вроде chunked triangular
+decoder / sparse operations.
 
 ## Сводная таблица
 
@@ -801,6 +876,7 @@ training.
 | late_loss v1 | weighted late-layer reconstruction | 0.374 | 0.295 | 1.899 | 2.031 | 0.663 | improves global fidelity/sign stability, not target MAE |
 | late_target v1 attempt | L23-upweighted run; target loss inactive | 0.356 | 0.272 | 2.041 | 1.885 | 0.682 | invalid as target-loss result |
 | late_target v2 | target loss 0.02 every step | 0.001 | 0.000 | 14.947 | 14.186 | 0.617 | target MAE improves slightly, replacement collapses |
+| late_target v3 | target loss 0.001 every 10 steps | 0.075 | 0.012 | 5.341 | 5.566 | 0.975 | tiny target loss still hurts fidelity |
 
 ## Текущий выбор baseline
 
@@ -843,9 +919,10 @@ base_clt_late_loss_v1
 Вторая проблема: разные objectives улучшают разные аспекты fidelity. v4
 улучшает top1, но портит KL. v3 улучшает часть continuous metrics, но портит
 top1. Old `late_target_v1` улучшил causal sign match, но target-loss в нём
-фактически не работал. Валидный `late_target_v2` показал, что target-aware
-objective может улучшить target MAE, но в текущей силе катастрофически рушит
-replacement fidelity.
+фактически не работал. Валидные `late_target_v2` и `late_target_v3` показали,
+что single-direction target-aware objective не является безопасным training
+loss: он либо катастрофически рушит replacement fidelity, либо ухудшает и
+global fidelity, и target MAE.
 
 Третья проблема: late-layer errors остаются ключевым bottleneck. Deep Trace
 suite стабильно указывает на `L18-L23`, особенно `L20`, `L21`, `L19` и затем
@@ -863,15 +940,15 @@ suite стабильно указывает на `L18-L23`, особенно `L2
 Ближайший эксперимент:
 
 ```text
-base_clt_late_target_v3
+base_clt_recon_fidelity_v1
 ```
 
-Его цель - проверить, может ли single-direction target loss быть безопасным,
-если сделать его очень слабым и редким: `weight: 0.001`,
-`every_n_micro_steps: 10`.
+Его цель - улучшать replacement fidelity общими методами: увеличить CLT
+capacity, ослабить sparsity, дать больше данных и больше optimizer steps, но
+не добавлять target-specific losses.
 
-Если v3 снова разрушит KL/top1, следующий путь - не усиливать target loss
-дальше, а возвращаться к более общей fidelity:
+Если этот run не улучшит KL/top1, следующий путь - не усиливать target loss
+дальше, а продолжать общую fidelity-ветку:
 
 ```text
 more capacity
