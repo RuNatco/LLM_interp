@@ -43,6 +43,10 @@ training:
   lambda_sparsity: 0.00005
   sparsity_warmup_steps: 0    # сразу полный sparsity — модель уже сошлась
   sparsity_c: 1.0
+  layer_sparsity_weights:
+    mode: quadratic
+    min_weight: 1.0
+    max_weight: 4.0
   max_optimizer_steps: 5000
   log_every: 25
   eval_every: 250

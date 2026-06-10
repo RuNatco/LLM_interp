@@ -15,6 +15,7 @@ from qwen_clt.models.cross_layer_transcoder import (
 from qwen_clt.training.losses import (
     reconstruction_loss,
     tanh_sparsity_loss,
+    build_layer_sparsity_weights,
 )
 from qwen_clt.training.metrics import summarize_metrics
 from qwen_clt.utils.seed import set_seed
@@ -281,6 +282,21 @@ def train_clt(cfg: dict) -> Path:
     sparsity_c = float(training_cfg.get("sparsity_c", 1.0))
     grad_clip = float(training_cfg.get("grad_clip_norm", 1.0))
 
+    # Per-layer sparsity weights: deep layers get higher pressure to stay sparse.
+    # Controlled by training.layer_sparsity_weights (mode/min/max).
+    lsw_cfg = training_cfg.get("layer_sparsity_weights") or {}
+    layer_weights = build_layer_sparsity_weights(
+        clt.n_layers,
+        mode=str(lsw_cfg.get("mode", "uniform")),
+        min_weight=float(lsw_cfg.get("min_weight", 1.0)),
+        max_weight=float(lsw_cfg.get("max_weight", 4.0)),
+    )
+    if lsw_cfg.get("mode", "uniform") != "uniform":
+        print(
+            f"[train_clt] Per-layer sparsity weights ({lsw_cfg.get('mode')}): "
+            f"L0={layer_weights[0]:.2f} .. L{clt.n_layers-1}={layer_weights[-1]:.2f}"
+        )
+
     metrics_path = output_dir / "metrics.jsonl"
     micro_step = 0
     optimizer_step = 0
@@ -301,7 +317,7 @@ def train_clt(cfg: dict) -> Path:
                 update_normalization_stats=True,
             )
             rec_loss = reconstruction_loss(recons, acts.mlp_outputs)
-            sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c)
+            sp_loss = tanh_sparsity_loss(features, clt, c=sparsity_c, layer_weights=layer_weights)
             lambda_sparsity = get_lambda_sparsity(
                 optimizer_step,
                 target_lambda=lambda_sparsity_target,

@@ -46,11 +46,17 @@ training:
   lambda_sparsity: 0.00005
   sparsity_warmup_steps: 1000
   sparsity_c: 1.0
+  # Per-layer sparsity: deep layers (L23 и около) получают в 4× больший штраф,
+  # чтобы противодействовать накоплению cross-layer decoder путей
+  layer_sparsity_weights:
+    mode: quadratic   # квадратичный рост — максимальное давление на самые глубокие слои
+    min_weight: 1.0
+    max_weight: 4.0
   max_optimizer_steps: 30000
   log_every: 50
   eval_every: 500               # eval на тестовом сплите каждые 500 шагов
-  save_every: 2000
-  keep_last_checkpoints: 3
+  save_every: 5000
+  keep_last_checkpoints: 1
   grad_clip_norm: 1.0
   seed: 42
 
