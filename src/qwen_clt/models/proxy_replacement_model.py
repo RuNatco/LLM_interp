@@ -37,9 +37,24 @@ class ProxyQwenReplacementModel:
     @classmethod
     def from_checkpoint(cls, checkpoint_path: str, cfg: dict | None = None):
         ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        cfg = cfg or ckpt["cfg"]
+        if not isinstance(ckpt, dict):
+            raise TypeError(
+                f"Expected checkpoint dict, got {type(ckpt)} "
+                f"in {checkpoint_path}."
+            )
+        if "model_state_dict" not in ckpt:
+            raise KeyError(
+                f"Checkpoint {checkpoint_path} has no 'model_state_dict'. "
+                f"Available keys: {list(ckpt.keys())}"
+            )
+        cfg = cfg or ckpt.get("cfg")
+        if cfg is None:
+            raise KeyError(
+                f"Checkpoint {checkpoint_path} has no 'cfg' and none was provided."
+            )
         base_model, tokenizer = load_qwen_model_and_tokenizer(cfg)
         clt_cfg = cfg["clt"]
+        device = next(base_model.parameters()).device
         clt = CrossLayerTranscoder(
             n_layers=int(clt_cfg["n_layers"]),
             d_model=int(clt_cfg["d_model"]),
@@ -47,19 +62,18 @@ class ProxyQwenReplacementModel:
             init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
             decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
             **clt_normalization_kwargs(clt_cfg),
-        ).to(next(base_model.parameters()).device)
-        missing_keys, unexpected_keys = clt.load_state_dict(
-            ckpt["model_state_dict"],
-            strict=False,
-        )
-        if missing_keys:
-            print("[proxy loader warning] Missing CLT keys:")
-            for key in missing_keys:
-                print(f"  - {key}")
-        if unexpected_keys:
-            print("[proxy loader warning] Unexpected CLT keys:")
-            for key in unexpected_keys:
-                print(f"  - {key}")
+        ).to(device)
+        # strict=True: any key mismatch indicates a real architecture divergence
+        # and should surface immediately rather than silently produce wrong results.
+        try:
+            clt.load_state_dict(ckpt["model_state_dict"], strict=True)
+        except RuntimeError as exc:
+            raise RuntimeError(
+                f"CLT state dict mismatch loading {checkpoint_path}. "
+                "If you changed the CLT architecture (n_layers, d_model, "
+                "features_per_layer), create a fresh checkpoint rather than "
+                f"loading an incompatible one.\nOriginal error: {exc}"
+            ) from exc
         clt.eval()
         return cls(base_model, tokenizer, clt, cfg)
 
@@ -116,8 +130,11 @@ class ProxyQwenReplacementModel:
     def feature_intervention(self, prompt: str, interventions: list[FeatureIntervention]):
         """Run feature interventions causally inside the CLT replacement model.
 
+        Runs exactly 2 forward passes (baseline replacement + intervened),
+        reusing the tokenized input.
+
         Returned logits:
-        - `logits`: original Qwen logits without replacement;
+        - `logits`: original Qwen logits (from baseline pass, no replacement);
         - `replacement_logits`: logits with CLT reconstruction replacing MLP outputs;
         - `intervened_logits`: logits with the same replacement plus feature edits.
 
@@ -125,19 +142,27 @@ class ProxyQwenReplacementModel:
         because CLT reconstruction itself can move logits relative to the original
         model.
         """
-        data = self.get_activations(prompt)
+        input_ids, attention_mask = self.tokenize(prompt)
 
+        # Pass 1: baseline replacement (also captures original logits via hook)
         replacement_config = ReplacementConfig()
         with LayerReplacementHook(
             model=self.base_model,
             autoencoder=self.clt,
             config=replacement_config,
         ) as replacement_hook:
-            replacement_logits = self._forward_logits(
-                data["input_ids"],
-                data["attention_mask"],
+            out = self.base_model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
             )
+            replacement_logits = out.logits.detach()
 
+        # Recompute original logits + activations without replacement in one pass
+        acts = self.collector.run(input_ids, attention_mask)
+        original_logits = acts.logits
+        features, recons = self.clt(acts.mlp_inputs)
+
+        # Pass 2: intervened replacement
         intervention_config = ReplacementConfig(
             feature_interventions=tuple(interventions),
         )
@@ -146,13 +171,20 @@ class ProxyQwenReplacementModel:
             autoencoder=self.clt,
             config=intervention_config,
         ) as intervention_hook:
-            intervened_logits = self._forward_logits(
-                data["input_ids"],
-                data["attention_mask"],
+            out = self.base_model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
             )
+            intervened_logits = out.logits.detach()
 
         return {
-            **data,
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "logits": original_logits,
+            "mlp_inputs": acts.mlp_inputs,
+            "mlp_outputs": acts.mlp_outputs,
+            "features": features,
+            "mlp_recons": recons,
             "replacement_logits": replacement_logits,
             "replacement_features": self._layer_dict_to_list(
                 replacement_hook.features_by_layer

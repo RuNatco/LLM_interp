@@ -26,22 +26,25 @@ def _wrap_instruct(text: str, cfg: dict, tokenizer: PreTrainedTokenizerBase) -> 
     return f"System: {system}\nUser: {user_prefix}\n{text}\nAssistant:"
 
 
-def iter_token_batches(
+def _iter_batches_from_split(
     cfg: dict,
     tokenizer: PreTrainedTokenizerBase,
     device: str,
+    *,
+    split: str,
+    max_tokens: int,
+    batch_size: int,
 ) -> Iterator[TokenBatch]:
+    """Shared tokenization + batching logic for any HuggingFace split."""
     data_cfg = cfg["data"]
     model_cfg = cfg["model"]
     ds = load_dataset(
         data_cfg["dataset_name"],
         data_cfg.get("dataset_config"),
-        split=data_cfg.get("split", "train"),
+        split=split,
     )
     text_field = data_cfg.get("text_field", "text")
     seq_len = int(data_cfg["seq_len"])
-    batch_size = int(cfg["training"]["batch_size_sequences"])
-    max_tokens = int(data_cfg.get("max_train_tokens", 1_000_000))
     use_chat_template = bool(model_cfg.get("chat_template", False))
 
     buffer: list[torch.Tensor] = []
@@ -69,3 +72,72 @@ def iter_token_batches(
                 buffer = []
                 if emitted_tokens >= max_tokens:
                     return
+
+
+def iter_token_batches(
+    cfg: dict,
+    tokenizer: PreTrainedTokenizerBase,
+    device: str,
+) -> Iterator[TokenBatch]:
+    data_cfg = cfg["data"]
+    yield from _iter_batches_from_split(
+        cfg,
+        tokenizer,
+        device,
+        split=data_cfg.get("split", "train"),
+        max_tokens=int(data_cfg.get("max_train_tokens", 1_000_000)),
+        batch_size=int(cfg["training"]["batch_size_sequences"]),
+    )
+
+
+def iter_eval_batches(
+    cfg: dict,
+    tokenizer: PreTrainedTokenizerBase,
+    device: str,
+) -> Iterator[TokenBatch]:
+    """Iterate over the validation/test split for reconstruction eval.
+
+    Uses data.eval_split (default: "test") and data.max_eval_tokens.
+    Falls back gracefully to "validation" if "test" is unavailable.
+    Batch size is taken from training.eval_batch_size_sequences (default: same
+    as training.batch_size_sequences).
+    """
+    data_cfg = cfg["data"]
+    training_cfg = cfg["training"]
+
+    eval_split = data_cfg.get("eval_split", "test")
+    max_eval_tokens = int(data_cfg.get("max_eval_tokens", 200_000))
+    batch_size = int(
+        training_cfg.get(
+            "eval_batch_size_sequences",
+            training_cfg["batch_size_sequences"],
+        )
+    )
+
+    try:
+        yield from _iter_batches_from_split(
+            cfg,
+            tokenizer,
+            device,
+            split=eval_split,
+            max_tokens=max_eval_tokens,
+            batch_size=batch_size,
+        )
+    except Exception as exc:
+        # Some datasets don't have a "test" split — try "validation"
+        if eval_split == "test":
+            import warnings
+            warnings.warn(
+                f"[iter_eval_batches] split={eval_split!r} failed "
+                f"({exc}), retrying with 'validation'."
+            )
+            yield from _iter_batches_from_split(
+                cfg,
+                tokenizer,
+                device,
+                split="validation",
+                max_tokens=max_eval_tokens,
+                batch_size=batch_size,
+            )
+        else:
+            raise
