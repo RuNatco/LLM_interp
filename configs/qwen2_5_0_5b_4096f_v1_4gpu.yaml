@@ -16,9 +16,11 @@ data:
   text_field: text
   split: train
   eval_split: test
-  seq_len: 128
+  seq_len: 256                  # длиннее окно → больше работы на GPU за батч
   max_train_tokens: 200000000   # per-rank; 4 GPUs see ~800M tokens total
   max_eval_tokens: 400000
+  num_workers: 4                # DataLoader workers для параллельной подачи данных
+  tokenized_cache_dir: .cache/tokenized  # кэш pre-tokenized датасета на диске
 
 clt:
   n_layers: 24
@@ -32,26 +34,22 @@ clt:
 # ---------------------------------------------------------------------------
 # 4-GPU параметры
 #
-# Стратегия: одинаковый эффективный batch на каждый GPU, как в 1-GPU конфиге.
-# Каждый GPU обрабатывает batch_size_sequences=16 последовательностей.
-# grad_accum=1 (нет смысла аккумулировать — 4 GPU уже дают достаточно сигнала).
-# Эффективный глобальный batch = 4 × 16 × 1 = 64 последовательности.
+# Эффективный глобальный batch = 4 GPUs × 64 seq × 1 grad_accum = 256 seq.
+# seq_len=256 → 256 × 256 = 65536 токенов на optimizer step — хорошо насыщает A100.
 #
-# LR масштабируется по правилу sqrt(world_size):
-#   lr_4gpu = lr_1gpu * sqrt(4) = 0.0002 * 2 = 0.0004
-#
-# Warmup сохраняется в шагах оптимизатора (не в токенах), поэтому
-# пропорционально увеличиваем его тоже (больший batch → дольше прогрев).
+# LR масштабируется по правилу sqrt(world_size) от базового 1-GPU lr:
+#   lr_4gpu = 0.0002 * sqrt(4 * 64/16) = 0.0002 * sqrt(16) = 0.0008
+# (учитываем и увеличение batch_size_sequences 16→64)
 # ---------------------------------------------------------------------------
 training:
-  batch_size_sequences: 16
-  eval_batch_size_sequences: 32
-  gradient_accumulation_steps: 1    # 4 GPU * 16 seq = 64 seq effective batch
-  lr: 0.0004                        # 0.0002 * sqrt(4) — linear warmup компенсирует
+  batch_size_sequences: 64           # A100 80GB легко держит 64×256 токенов
+  eval_batch_size_sequences: 64
+  gradient_accumulation_steps: 1    # 4 GPU * 64 seq = 256 seq effective batch
+  lr: 0.0008                        # 0.0002 * sqrt(16) — масштаб по batch size
   weight_decay: 0.01
   lr_scheduler:
     enabled: true
-    warmup_steps: 1000              # дольше прогрев при большем effective batch
+    warmup_steps: 2000              # дольше warmup — effective batch в 16× больше базового
     min_lr_ratio: 0.1
   lambda_sparsity: 0.00005
   sparsity_warmup_steps: 1000
