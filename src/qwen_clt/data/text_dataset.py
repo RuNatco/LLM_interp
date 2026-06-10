@@ -34,8 +34,17 @@ def _iter_batches_from_split(
     split: str,
     max_tokens: int,
     batch_size: int,
+    rank: int = 0,
+    world_size: int = 1,
 ) -> Iterator[TokenBatch]:
-    """Shared tokenization + batching logic for any HuggingFace split."""
+    """Shared tokenization + batching logic for any HuggingFace split.
+
+    Multi-GPU: each rank takes every world_size-th batch starting at its rank
+    (interleave). This ensures non-overlapping data across ranks without
+    requiring the dataset to be pre-split.
+
+    max_tokens counts tokens emitted by *this rank only*.
+    """
     data_cfg = cfg["data"]
     model_cfg = cfg["model"]
     ds = load_dataset(
@@ -49,6 +58,7 @@ def _iter_batches_from_split(
 
     buffer: list[torch.Tensor] = []
     emitted_tokens = 0
+    batch_index = 0  # global batch counter used for rank assignment
 
     for row in ds:
         text = (row.get(text_field) or "").strip()
@@ -65,19 +75,25 @@ def _iter_batches_from_split(
                 continue
             buffer.append(chunk)
             if len(buffer) == batch_size:
-                input_ids = torch.stack(buffer).to(device)
-                attention_mask = torch.ones_like(input_ids, device=device)
-                emitted_tokens += int(input_ids.numel())
-                yield TokenBatch(input_ids=input_ids, attention_mask=attention_mask)
+                # Interleave: rank r processes batches 0, world_size, 2*world_size, ...
+                # offset by r, i.e. batch_index % world_size == rank
+                if batch_index % world_size == rank:
+                    input_ids = torch.stack(buffer).to(device)
+                    attention_mask = torch.ones_like(input_ids, device=device)
+                    emitted_tokens += int(input_ids.numel())
+                    yield TokenBatch(input_ids=input_ids, attention_mask=attention_mask)
+                    if emitted_tokens >= max_tokens:
+                        return
+                batch_index += 1
                 buffer = []
-                if emitted_tokens >= max_tokens:
-                    return
 
 
 def iter_token_batches(
     cfg: dict,
     tokenizer: PreTrainedTokenizerBase,
     device: str,
+    rank: int = 0,
+    world_size: int = 1,
 ) -> Iterator[TokenBatch]:
     data_cfg = cfg["data"]
     yield from _iter_batches_from_split(
@@ -87,6 +103,8 @@ def iter_token_batches(
         split=data_cfg.get("split", "train"),
         max_tokens=int(data_cfg.get("max_train_tokens", 1_000_000)),
         batch_size=int(cfg["training"]["batch_size_sequences"]),
+        rank=rank,
+        world_size=world_size,
     )
 
 

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
 import json
 import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 
 from qwen_clt.data.text_dataset import iter_token_batches, iter_eval_batches
@@ -20,6 +23,39 @@ from qwen_clt.training.losses import (
 from qwen_clt.training.metrics import summarize_metrics
 from qwen_clt.utils.seed import set_seed
 from qwen_clt.utils.io import save_checkpoint
+
+
+# ---------------------------------------------------------------------------
+# Distributed helpers
+# ---------------------------------------------------------------------------
+
+def _init_distributed() -> tuple[int, int, int]:
+    """Initialize torch.distributed if torchrun set the env vars.
+
+    Returns (local_rank, global_rank, world_size).
+    If not running under torchrun, returns (0, 0, 1) — single-GPU mode.
+    """
+    if "LOCAL_RANK" not in os.environ:
+        return 0, 0, 1
+
+    local_rank = int(os.environ["LOCAL_RANK"])
+    rank = int(os.environ.get("RANK", local_rank))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+
+    if not dist.is_initialized():
+        dist.init_process_group(backend="nccl")
+
+    torch.cuda.set_device(local_rank)
+    return local_rank, rank, world_size
+
+
+def _cleanup_distributed() -> None:
+    if dist.is_initialized():
+        dist.destroy_process_group()
+
+
+def _is_main(rank: int) -> bool:
+    return rank == 0
 
 
 # ---------------------------------------------------------------------------
@@ -210,11 +246,23 @@ def eval_clt(
 # ---------------------------------------------------------------------------
 
 def train_clt(cfg: dict) -> Path:
-    seed = int(cfg["training"].get("seed", 42))
+    local_rank, rank, world_size = _init_distributed()
+    is_main = _is_main(rank)
+
+    seed = int(cfg["training"].get("seed", 42)) + rank  # unique seed per rank
     set_seed(seed)
-    device = cfg["model"].get("device", "cuda" if torch.cuda.is_available() else "cpu")
+
+    # Device: use local_rank for multi-GPU, otherwise respect config
+    if world_size > 1:
+        device = f"cuda:{local_rank}"
+    else:
+        device = cfg["model"].get("device", "cuda" if torch.cuda.is_available() else "cpu")
+
     output_dir = Path(cfg["project"]["output_dir"])
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if is_main:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    if world_size > 1:
+        dist.barrier()  # all ranks wait until rank 0 creates the dir
 
     model, tokenizer = load_qwen_model_and_tokenizer(cfg)
     collector = QwenMLPHookCollector(model)
@@ -235,6 +283,14 @@ def train_clt(cfg: dict) -> Path:
     if init_checkpoint_path:
         init_checkpoint = load_initial_clt_weights(clt, init_checkpoint_path)
         clt.to(device)
+
+    # Wrap CLT in DDP for multi-GPU training.
+    # The base Qwen model stays on device as plain inference — no grad, no DDP needed.
+    clt_ddp: torch.nn.Module = clt  # alias used for forward pass
+    if world_size > 1:
+        clt_ddp = DDP(clt, device_ids=[local_rank], output_device=local_rank)
+        if is_main:
+            print(f"[train_clt] DDP enabled: world_size={world_size}")
 
     optimizer = torch.optim.AdamW(
         clt.parameters(),
@@ -302,16 +358,22 @@ def train_clt(cfg: dict) -> Path:
     optimizer_step = 0
     optimizer.zero_grad(set_to_none=True)
 
-    pbar = tqdm(total=max_optimizer_steps, desc="train CLT optimizer steps")
+    pbar = tqdm(
+        total=max_optimizer_steps,
+        desc="train CLT optimizer steps",
+        disable=not is_main,
+    )
     while optimizer_step < max_optimizer_steps:
-        for batch in iter_token_batches(cfg, tokenizer, device=device):
+        for batch in iter_token_batches(
+            cfg, tokenizer, device=device, rank=rank, world_size=world_size
+        ):
             if max_micro_steps is not None and micro_step >= max_micro_steps:
                 break
 
             with torch.no_grad():
                 acts = collector.run(batch.input_ids, batch.attention_mask)
 
-            features, recons = clt(
+            features, recons = clt_ddp(
                 acts.mlp_inputs,
                 mlp_targets=acts.mlp_outputs,
                 update_normalization_stats=True,
@@ -340,7 +402,7 @@ def train_clt(cfg: dict) -> Path:
 
                 current_lr = optimizer.param_groups[0]["lr"]
 
-                if optimizer_step == 1 or optimizer_step % log_every == 0:
+                if is_main and (optimizer_step == 1 or optimizer_step % log_every == 0):
                     summary = summarize_metrics(features, recons, acts.mlp_outputs)
                     row = {
                         "kind": "train",
@@ -364,8 +426,8 @@ def train_clt(cfg: dict) -> Path:
                         f"l0={row['l0_mean']:.2f}"
                     )
 
-                # Eval on held-out split
-                if eval_every > 0 and optimizer_step % eval_every == 0:
+                # Eval on held-out split (rank 0 only)
+                if is_main and eval_every > 0 and optimizer_step % eval_every == 0:
                     eval_metrics = eval_clt(
                         clt, collector, cfg, tokenizer, device
                     )
@@ -384,7 +446,7 @@ def train_clt(cfg: dict) -> Path:
                             f"eval_l0={eval_metrics['eval_l0_mean']:.2f}"
                         )
 
-                if optimizer_step > 0 and optimizer_step % save_every == 0:
+                if is_main and optimizer_step > 0 and optimizer_step % save_every == 0:
                     ckpt_path = output_dir / f"clt_step_{optimizer_step}.pt"
                     save_checkpoint(
                         {
@@ -415,25 +477,33 @@ def train_clt(cfg: dict) -> Path:
             break
 
     pbar.close()
+
+    # Barrier: all ranks finish before rank 0 writes the final checkpoint
+    if world_size > 1:
+        dist.barrier()
+
     final_path = output_dir / "clt_final.pt"
-    save_checkpoint(
-        {
-            "cfg": cfg,
-            "model_state_dict": clt.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict()
-            if scheduler is not None
-            else None,
-            "step": optimizer_step,
-            "optimizer_step": optimizer_step,
-            "micro_step": micro_step,
-            "init_from_checkpoint": str(init_checkpoint_path)
-            if init_checkpoint_path
-            else None,
-            "init_checkpoint_step": init_checkpoint.get("step")
-            if init_checkpoint
-            else None,
-        },
-        final_path,
-    )
+    if is_main:
+        save_checkpoint(
+            {
+                "cfg": cfg,
+                "model_state_dict": clt.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "scheduler_state_dict": scheduler.state_dict()
+                if scheduler is not None
+                else None,
+                "step": optimizer_step,
+                "optimizer_step": optimizer_step,
+                "micro_step": micro_step,
+                "init_from_checkpoint": str(init_checkpoint_path)
+                if init_checkpoint_path
+                else None,
+                "init_checkpoint_step": init_checkpoint.get("step")
+                if init_checkpoint
+                else None,
+            },
+            final_path,
+        )
+
+    _cleanup_distributed()
     return final_path

@@ -1,0 +1,102 @@
+project:
+  name: qwen2_5_0_5b_4096f_v1_4gpu
+  output_dir: outputs/4096f_v1_4gpu
+
+model:
+  name: Qwen/Qwen2.5-0.5B
+  dtype: bfloat16
+  device: cuda          # overridden per-rank by DDP init to cuda:local_rank
+  trust_remote_code: true
+  use_cache: false
+  chat_template: false
+
+data:
+  dataset_name: wikitext
+  dataset_config: wikitext-103-raw-v1
+  text_field: text
+  split: train
+  eval_split: test
+  seq_len: 128
+  max_train_tokens: 200000000   # per-rank; 4 GPUs see ~800M tokens total
+  max_eval_tokens: 400000
+
+clt:
+  n_layers: 24
+  d_model: 896
+  features_per_layer: 4096
+  input_kind: mlp_normed_input
+  nonlinearity: jumprelu
+  init_threshold: 0.1
+  decoder_init_scale: 0.02
+
+# ---------------------------------------------------------------------------
+# 4-GPU параметры
+#
+# Стратегия: одинаковый эффективный batch на каждый GPU, как в 1-GPU конфиге.
+# Каждый GPU обрабатывает batch_size_sequences=16 последовательностей.
+# grad_accum=1 (нет смысла аккумулировать — 4 GPU уже дают достаточно сигнала).
+# Эффективный глобальный batch = 4 × 16 × 1 = 64 последовательности.
+#
+# LR масштабируется по правилу sqrt(world_size):
+#   lr_4gpu = lr_1gpu * sqrt(4) = 0.0002 * 2 = 0.0004
+#
+# Warmup сохраняется в шагах оптимизатора (не в токенах), поэтому
+# пропорционально увеличиваем его тоже (больший batch → дольше прогрев).
+# ---------------------------------------------------------------------------
+training:
+  batch_size_sequences: 16
+  eval_batch_size_sequences: 32
+  gradient_accumulation_steps: 1    # 4 GPU * 16 seq = 64 seq effective batch
+  lr: 0.0004                        # 0.0002 * sqrt(4) — linear warmup компенсирует
+  weight_decay: 0.01
+  lr_scheduler:
+    enabled: true
+    warmup_steps: 1000              # дольше прогрев при большем effective batch
+    min_lr_ratio: 0.1
+  lambda_sparsity: 0.00005
+  sparsity_warmup_steps: 1000
+  sparsity_c: 1.0
+  layer_sparsity_weights:
+    mode: quadratic
+    min_weight: 1.0
+    max_weight: 4.0
+  max_optimizer_steps: 30000
+  log_every: 50
+  eval_every: 500
+  save_every: 5000
+  keep_last_checkpoints: 1
+  grad_clip_norm: 1.0
+  seed: 42
+
+replacement:
+  enabled: true
+  checkpoint_path: outputs/4096f_v1_4gpu/clt_final.pt
+  read_from: mlp_normed_input
+  replace_at: mlp_output
+  replace_mode: full
+  detach_reconstruction: false
+
+replacement_eval:
+  enabled: true
+  max_eval_tokens: 50000
+  batch_size_sequences: 64
+  output_path: outputs/4096f_v1_4gpu/replacement_eval_metrics.json
+  metrics:
+    - kl_div
+    - logit_mse
+    - top1_agreement
+    - mean_abs_logit_diff
+    - last_token_kl_div
+    - last_token_top1_agreement
+  target_logit_diff:
+    positive: " increase"
+    negative: " decrease"
+    target_pos: -1
+  diagnostics:
+    enabled: false
+    max_eval_tokens: 5000
+    layerwise: true
+    layer_stride: 1
+    prefix: true
+    prefix_stride: 1
+  save_batch_metrics: false
