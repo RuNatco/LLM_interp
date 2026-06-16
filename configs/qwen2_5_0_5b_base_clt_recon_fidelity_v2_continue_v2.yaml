@@ -76,3 +76,9 @@ replacement_eval:
     prefix: true
     prefix_stride: 1
   save_batch_metrics: true
+  baselines:
+    enabled: true
+    kinds:
+      - zero
+      - mean
+      - random_clt

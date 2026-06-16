@@ -22,6 +22,9 @@ from qwen_clt.replacement import (
     compute_replacement_metrics,
     load_autoencoder_from_checkpoint,
     metrics_to_dict,
+    ConstantReplacementHook,
+    build_random_clt_like,
+    compute_mean_mlp_outputs,
 )
 
 
@@ -63,6 +66,17 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Optional override for replacement_eval.batch_size_sequences.",
+    )
+
+    parser.add_argument(
+        "--baselines",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated control baselines to run "
+            "(choices: zero, mean, random_clt; or 'all'/'none'). "
+            "Overrides replacement_eval.baselines in the config."
+        ),
     )
 
     return parser.parse_args()
@@ -360,6 +374,213 @@ def evaluate_replacement(
     return aggregate_batch_metrics(batch_metrics), batch_metrics
 
 
+ALL_BASELINES: tuple[str, ...] = ("zero", "mean", "random_clt")
+
+# Key metrics used for the headline CLT-vs-controls comparison.
+_COMPARISON_METRICS: tuple[str, ...] = (
+    "kl_div",
+    "last_token_kl_div",
+    "top1_agreement",
+    "last_token_top1_agreement",
+)
+
+
+def resolve_baseline_kinds(
+    eval_cfg: dict[str, Any],
+    cli_arg: str | None,
+) -> list[str]:
+    """Resolve which control baselines to run from CLI or config.
+
+    CLI (--baselines) wins over config. Accepts a comma list, 'all', or 'none'.
+    Config form: replacement_eval.baselines: {enabled: bool, kinds: [...]}.
+    """
+    if cli_arg is not None:
+        raw = cli_arg.strip().lower()
+        if raw in {"", "none"}:
+            return []
+        if raw == "all":
+            return list(ALL_BASELINES)
+        requested = [item.strip() for item in raw.split(",") if item.strip()]
+    else:
+        baselines_cfg = eval_cfg.get("baselines", {}) or {}
+        if not bool(baselines_cfg.get("enabled", False)):
+            return []
+        requested = [str(item).strip() for item in baselines_cfg.get("kinds", ALL_BASELINES)]
+
+    unknown = [kind for kind in requested if kind not in ALL_BASELINES]
+    if unknown:
+        raise ValueError(
+            f"Unknown baseline(s): {unknown}. Choose from {list(ALL_BASELINES)}."
+        )
+    # De-duplicate while preserving order.
+    seen: set[str] = set()
+    return [kind for kind in requested if not (kind in seen or seen.add(kind))]
+
+
+@torch.no_grad()
+def evaluate_baselines(
+    *,
+    model,
+    tokenizer,
+    autoencoder,
+    eval_texts: list[str],
+    kinds: list[str],
+    device: str,
+    seq_len: int,
+    batch_size_sequences: int,
+    target_token_ids: tuple[int, int] | None,
+    target_pos: int,
+    seed: int,
+) -> dict[str, dict[str, float | int]]:
+    """Evaluate control baselines on the same eval set as the trained CLT.
+
+    Each baseline replaces the exact CLT-covered MLP outputs with an
+    uninformative substitute. The model's original logits are computed once per
+    batch and shared across all baselines to avoid redundant forward passes.
+    """
+    if not kinds:
+        return {}
+
+    n_clt_layers = int(autoencoder.n_layers)
+    d_model = int(autoencoder.d_model)
+
+    # Pre-encode the eval set once; reused by the mean pass and every baseline.
+    encoded_batches = [
+        encode_texts(
+            tokenizer=tokenizer,
+            texts=texts,
+            device=device,
+            seq_len=seq_len,
+        )
+        for texts in batch_iter(eval_texts, batch_size_sequences)
+    ]
+
+    # The mean-ablation baseline needs per-layer dataset means first.
+    per_layer_mean: dict[int, torch.Tensor] | None = None
+    if "mean" in kinds:
+        per_layer_mean = compute_mean_mlp_outputs(
+            model=model,
+            encoded_batches=encoded_batches,
+            n_clt_layers=n_clt_layers,
+            d_model=d_model,
+            device=device,
+            run_logits=lambda m, enc: run_model_logits(model=m, encoded=enc),
+            progress=lambda it: tqdm(it, desc="Mean-ablation: collecting means"),
+        )
+
+    def make_ctx(kind: str):
+        if kind == "zero":
+            return ConstantReplacementHook(
+                model, mode="zero", n_clt_layers=n_clt_layers
+            )
+        if kind == "mean":
+            return ConstantReplacementHook(
+                model,
+                mode="mean",
+                n_clt_layers=n_clt_layers,
+                per_layer_value=per_layer_mean,
+            )
+        if kind == "random_clt":
+            random_clt = build_random_clt_like(autoencoder, device=device, seed=seed)
+            return LayerReplacementHook(
+                model=model,
+                autoencoder=random_clt,
+                config=make_replacement_config(
+                    replacement_cfg={
+                        "read_from": "mlp_normed_input",
+                        "replace_at": "mlp_output",
+                        "replace_mode": "full",
+                    },
+                    clt_cfg={"input_kind": "mlp_normed_input"},
+                ),
+            )
+        raise ValueError(f"Unknown baseline kind={kind!r}.")
+
+    # random_clt is stateless across batches (same weights), build once.
+    random_ctx = make_ctx("random_clt") if "random_clt" in kinds else None
+
+    per_kind_batches: dict[str, list[dict[str, float | int]]] = {
+        kind: [] for kind in kinds
+    }
+
+    for encoded in tqdm(encoded_batches, desc="Evaluating baselines"):
+        attention_mask = encoded.get("attention_mask")
+        attention_mask_cpu = (
+            attention_mask.detach().cpu() if attention_mask is not None else None
+        )
+        original_logits = run_model_logits(model=model, encoded=encoded)
+
+        for kind in kinds:
+            ctx = random_ctx if kind == "random_clt" else make_ctx(kind)
+            with ctx:
+                replacement_logits = run_model_logits(model=model, encoded=encoded)
+
+            metrics = compute_replacement_metrics(
+                original_logits=original_logits,
+                replacement_logits=replacement_logits,
+                attention_mask=attention_mask_cpu,
+                target_token_ids=target_token_ids,
+                target_pos=target_pos,
+            )
+            per_kind_batches[kind].append(metrics_to_dict(metrics))
+
+    return {
+        kind: aggregate_batch_metrics(batches)
+        for kind, batches in per_kind_batches.items()
+    }
+
+
+def _recovered_fraction(clt_value: float, baseline_value: float) -> float | None:
+    """Fraction of the baseline's gap-to-original that the CLT closed.
+
+    1.0 means the CLT matches the original where the baseline was off; 0.0 means
+    the CLT is no better than the (uninformative) baseline. Defined for
+    lower-is-better metrics like KL where original-vs-original == 0.
+    """
+    if baseline_value <= 0.0:
+        return None
+    return 1.0 - (clt_value / baseline_value)
+
+
+def build_baseline_comparison(
+    clt_metrics: dict[str, float | int],
+    baseline_metrics: dict[str, dict[str, float | int]],
+) -> dict[str, Any]:
+    """Compact CLT-vs-controls table plus recovered-fraction summaries."""
+    table: dict[str, dict[str, float]] = {
+        "clt": {
+            key: float(clt_metrics[key])
+            for key in _COMPARISON_METRICS
+            if key in clt_metrics
+        }
+    }
+    for kind, metrics in baseline_metrics.items():
+        table[kind] = {
+            key: float(metrics[key])
+            for key in _COMPARISON_METRICS
+            if key in metrics
+        }
+
+    recovered: dict[str, dict[str, float | None]] = {}
+    for kind, metrics in baseline_metrics.items():
+        recovered[kind] = {}
+        for key in ("kl_div", "last_token_kl_div"):
+            if key in clt_metrics and key in metrics:
+                recovered[kind][f"recovered_fraction_{key}"] = _recovered_fraction(
+                    float(clt_metrics[key]), float(metrics[key])
+                )
+
+    return {
+        "metrics_table": table,
+        "recovered_fraction": recovered,
+        "note": (
+            "recovered_fraction[k] = 1 - KL(CLT)/KL(baseline_k); "
+            "1.0 = CLT recovers the full gap the baseline left, "
+            "0.0 = CLT no better than that control."
+        ),
+    }
+
+
 def diagnostic_modes(
     diagnostics_cfg: dict[str, Any],
     n_layers: int,
@@ -568,6 +789,29 @@ def main() -> None:
         target_pos=target_pos,
     )
 
+    # Control baselines: trained CLT only means something relative to these.
+    baseline_kinds = resolve_baseline_kinds(eval_cfg, args.baselines)
+    baseline_metrics: dict[str, dict[str, float | int]] = {}
+    baseline_comparison: dict[str, Any] = {}
+    if baseline_kinds:
+        print(f"\nRunning control baselines: {', '.join(baseline_kinds)}")
+        baseline_metrics = evaluate_baselines(
+            model=model,
+            tokenizer=tokenizer,
+            autoencoder=autoencoder,
+            eval_texts=eval_texts,
+            kinds=baseline_kinds,
+            device=device,
+            seq_len=seq_len,
+            batch_size_sequences=batch_size_sequences,
+            target_token_ids=target_token_ids,
+            target_pos=target_pos,
+            seed=seed,
+        )
+        baseline_comparison = build_baseline_comparison(
+            aggregated_metrics, baseline_metrics
+        )
+
     diagnostics_cfg = eval_cfg.get("diagnostics", {})
     diagnostics: dict[str, Any] = {}
     diagnostics_texts: list[str] | None = None
@@ -665,6 +909,10 @@ def main() -> None:
     if bool(eval_cfg.get("save_batch_metrics", True)):
         result["batch_metrics"] = batch_metrics
 
+    if baseline_metrics:
+        result["baselines"] = baseline_metrics
+        result["baseline_comparison"] = baseline_comparison
+
     if diagnostics:
         result["diagnostics"] = diagnostics
 
@@ -677,6 +925,30 @@ def main() -> None:
             print(f"{key}: {value}")
         else:
             print(f"{key}: {value:.6f}")
+
+    if baseline_metrics:
+        table = baseline_comparison["metrics_table"]
+        recovered = baseline_comparison["recovered_fraction"]
+        col_order = [c for c in ("clt", *ALL_BASELINES) if c in table]
+
+        print("\nCLT vs control baselines:")
+        header = f"{'metric':<28}" + "".join(f"{c:>14}" for c in col_order)
+        print(header)
+        print("-" * len(header))
+        for metric_key in _COMPARISON_METRICS:
+            row = f"{metric_key:<28}"
+            for c in col_order:
+                value = table.get(c, {}).get(metric_key)
+                row += f"{value:>14.4f}" if value is not None else f"{'-':>14}"
+            print(row)
+
+        print("\nFraction of MLP causal effect recovered (vs each control):")
+        for kind, recs in recovered.items():
+            parts = []
+            for key, frac in recs.items():
+                short = key.replace("recovered_fraction_", "")
+                parts.append(f"{short}={frac:.3f}" if frac is not None else f"{short}=n/a")
+            print(f"  vs {kind:<12} " + "  ".join(parts))
 
     if diagnostics:
         print("\nDiagnostics:")

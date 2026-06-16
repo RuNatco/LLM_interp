@@ -5,6 +5,11 @@ from qwen_clt.replacement.metrics import (
     compute_replacement_metrics,
     metrics_to_dict,
 )
+from qwen_clt.replacement.baselines import (
+    ConstantReplacementHook,
+    build_random_clt_like,
+    compute_mean_mlp_outputs,
+)
 
 __all__ = [
     "LayerReplacementHook",
@@ -13,4 +18,7 @@ __all__ = [
     "ReplacementMetrics",
     "compute_replacement_metrics",
     "metrics_to_dict",
+    "ConstantReplacementHook",
+    "build_random_clt_like",
+    "compute_mean_mlp_outputs",
 ]
