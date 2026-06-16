@@ -131,7 +131,9 @@ def _build_dataloader(
     use_chat_template = bool(model_cfg.get("chat_template", False))
     text_field = data_cfg.get("text_field", "text")
 
-    # Cache dir for tokenized dataset (optional, speeds up re-runs)
+    # Optional override for the HF datasets cache location. The raw dataset
+    # download AND the derived tokenize/chunk .map() caches both live here,
+    # so re-runs skip tokenization entirely.
     cache_dir = data_cfg.get("tokenized_cache_dir") or None
 
     raw_ds = load_dataset(
@@ -209,13 +211,14 @@ def iter_token_batches(
     )
 
     emitted_tokens = 0
+    epoch = 0
     # Loop over the dataloader repeatedly until max_tokens is reached.
     # One pass through the loader may not be enough for large max_train_tokens.
     while True:
         if hasattr(loader.sampler, "set_epoch"):
             # Advance epoch so DistributedSampler reshuffles each pass
-            epoch = emitted_tokens // max(1, len(loader.dataset) * batch_size)
             loader.sampler.set_epoch(epoch)
+        epoch += 1
 
         for batch in loader:
             batch = TokenBatch(

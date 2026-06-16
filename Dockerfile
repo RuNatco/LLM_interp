@@ -1,49 +1,57 @@
-FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+# syntax=docker/dockerfile:1
+# ---------------------------------------------------------------------------
+# Cross-Layer Transcoder (CLT) — training image
+#
+# Base: pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel
+#   • PyTorch 2.4.1  • CUDA 12.1  • cuDNN 9  • NCCL 2.21 (compatible)
+#   • Python 3.11
+#
+# Supports both single-GPU and 2-GPU DDP (torchrun) out of the box.
+# ---------------------------------------------------------------------------
+FROM pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYENV_ROOT=/root/.pyenv
-ENV PATH="${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:/root/.local/bin:${PATH}"
-ENV HF_HOME=/workspace/.cache/huggingface
-
-ARG PYTHON_VERSION=3.12.0
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    build-essential \
-    libssl-dev \
-    zlib1g-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libncursesw5-dev \
-    xz-utils \
-    tk-dev \
-    libxml2-dev \
-    libxmlsec1-dev \
-    libffi-dev \
-    liblzma-dev \
-    wget \
-    ca-certificates \
+# ── system ──────────────────────────────────────────────────────────────────
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl https://pyenv.run | bash \
-    && pyenv install "${PYTHON_VERSION}" \
-    && pyenv global "${PYTHON_VERSION}"
+# ── NCCL / runtime env ──────────────────────────────────────────────────────
+# Single-node, no InfiniBand. P2P (NVLink/PCIe) enabled.
+ENV NCCL_DEBUG=WARN
+ENV NCCL_IB_DISABLE=1
+ENV NCCL_P2P_DISABLE=0
+# Prevent CPU thread oversubscription when DDP spawns multiple workers
+ENV OMP_NUM_THREADS=1
+# HuggingFace cache inside the workspace volume
+ENV HF_HOME=/workspace/.cache/huggingface
+# Avoid HF tokenizer fork warnings
+ENV TOKENIZERS_PARALLELISM=false
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+WORKDIR /workspace
 
-WORKDIR /workspace/qwen_clt_circuit_baseline
+# ── Python deps ──────────────────────────────────────────────────────────────
+# torch is already provided by the base image — install only app deps.
+COPY requirements.txt constraints.txt ./
+RUN pip install --no-cache-dir \
+        transformers==4.44.2 \
+        "datasets==2.20.0" \
+        "pyyaml>=6.0" \
+        "numpy>=1.26,<2" \
+        "tqdm>=4.66" \
+        "safetensors>=0.4" \
+        -c constraints.txt
 
-COPY requirements.txt constraints.txt pyproject.toml ./
+# ── package install ──────────────────────────────────────────────────────────
+COPY pyproject.toml ./
 COPY src ./src
+RUN pip install --no-cache-dir -e . --no-deps
 
-RUN uv pip install --system --upgrade pip \
-    && uv pip install --system -r requirements.txt -c constraints.txt \
-    && uv pip install --system -e .
-
+# ── project assets ───────────────────────────────────────────────────────────
 COPY configs ./configs
 COPY scripts ./scripts
-COPY README.md EXPERIMENT_PIPELINE.md EXPERIMENT_PLAN.md ./
 
-CMD ["/bin/bash"]
+CMD ["bash"]

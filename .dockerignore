@@ -3,5 +3,23 @@
 .pytest_cache
 __pycache__
 *.pyc
+*.pyo
+
+# heavy artifacts — always external to the image
 .cache
 outputs
+*.pt
+*.pth
+*.safetensors
+
+# dev / IDE
+.DS_Store
+*.ipynb
+.mypy_cache
+.ruff_cache
+
+# docs
+*.md
+
+# tests not needed at runtime
+tests/

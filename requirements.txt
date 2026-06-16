@@ -1,7 +1,20 @@
-torch>=2.1
+# ---------------------------------------------------------------------------
+# Runtime dependencies
+#
+# Docker (recommended):
+#   Base image pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel already provides
+#   torch 2.4.1+cu121. Only the deps below are installed on top of it.
+#
+# Local (non-Docker):
+#   Install torch manually for your CUDA version BEFORE this file:
+#     pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+#   Then:
+#     pip install -r requirements.txt
+# ---------------------------------------------------------------------------
+
 transformers==4.44.2
 datasets==2.20.0
 pyyaml>=6.0
-numpy==1.26.4
+numpy>=1.26,<2
 tqdm>=4.66
 safetensors>=0.4

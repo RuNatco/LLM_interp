@@ -43,7 +43,15 @@ def _init_distributed() -> tuple[int, int, int]:
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
     if not dist.is_initialized():
-        dist.init_process_group(backend="nccl")
+        # backend выбирается через env var DIST_BACKEND (default: nccl).
+        # Если NCCL несовместим с установленным CUDA runtime — используй gloo:
+        #   export DIST_BACKEND=gloo
+        # Gloo работает через shared memory на одной машине, не зависит от
+        # версии NCCL/CUDA, но медленнее NCCL на ~20-30% из-за CPU allreduce.
+        backend = os.environ.get("DIST_BACKEND", "nccl")
+        dist.init_process_group(backend=backend)
+        if rank == 0:
+            print(f"[dist] backend={backend} world_size={world_size}")
 
     torch.cuda.set_device(local_rank)
     return local_rank, rank, world_size
@@ -259,10 +267,8 @@ def train_clt(cfg: dict) -> Path:
         device = cfg["model"].get("device", "cuda" if torch.cuda.is_available() else "cpu")
 
     output_dir = Path(cfg["project"]["output_dir"])
-    if is_main:
-        output_dir.mkdir(parents=True, exist_ok=True)
-    if world_size > 1:
-        dist.barrier()  # all ranks wait until rank 0 creates the dir
+    # exist_ok=True — все ранки могут создавать папку одновременно, гонки нет
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     model, tokenizer = load_qwen_model_and_tokenizer(cfg)
     collector = QwenMLPHookCollector(model)
@@ -278,9 +284,16 @@ def train_clt(cfg: dict) -> Path:
     ).to(device)
 
     training_cfg = cfg["training"]
-    init_checkpoint_path = training_cfg.get("init_from_checkpoint")
+    # CLT_OVERRIDE_INIT_CHECKPOINT: выставляется scripts/run.sh (--continue-from)
+    # и scripts/12_train_multigpu.sh (--continue-ckpt), имеет приоритет над конфигом.
+    init_checkpoint_path = (
+        os.environ.get("CLT_OVERRIDE_INIT_CHECKPOINT")
+        or training_cfg.get("init_from_checkpoint")
+    )
     init_checkpoint = None
     if init_checkpoint_path:
+        if is_main and os.environ.get("CLT_OVERRIDE_INIT_CHECKPOINT"):
+            print(f"[train_clt] init checkpoint overridden via env: {init_checkpoint_path}")
         init_checkpoint = load_initial_clt_weights(clt, init_checkpoint_path)
         clt.to(device)
 
@@ -322,12 +335,18 @@ def train_clt(cfg: dict) -> Path:
         min_lr_ratio=min_lr_ratio,
     ) if use_scheduler else None
 
-    # Restore scheduler state if continuing from checkpoint
-    if scheduler is not None and init_checkpoint is not None:
+    # Scheduler state восстанавливается ТОЛЬКО при явном resume
+    # (training.restore_scheduler_state: true). При stage-continuation
+    # (continue_v1/v2 конфиги) scheduler должен начинаться заново: иначе
+    # last_epoch из прошлой стадии превышает total_steps новой, progress
+    # клампится в 1.0 и lr навсегда застревает на min_lr без warmup.
+    restore_scheduler = bool(training_cfg.get("restore_scheduler_state", False))
+    if scheduler is not None and init_checkpoint is not None and restore_scheduler:
         saved_scheduler = init_checkpoint.get("scheduler_state_dict")
         if saved_scheduler is not None:
             scheduler.load_state_dict(saved_scheduler)
-            print(f"[train_clt] Restored scheduler state from checkpoint.")
+            if is_main:
+                print("[train_clt] Restored scheduler state from checkpoint.")
 
     log_every = int(training_cfg.get("log_every", 50))
     eval_every = int(training_cfg.get("eval_every", 0))

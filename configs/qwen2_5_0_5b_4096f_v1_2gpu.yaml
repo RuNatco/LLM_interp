@@ -16,9 +16,11 @@ data:
   text_field: text
   split: train
   eval_split: test
-  seq_len: 128
-  max_train_tokens: 200000000   # per-rank; 2 GPUs см. ~400M токенов total
+  seq_len: 256                  # длиннее окно → больше контекста за батч
+  max_train_tokens: 200000000   # per-rank; 2 GPU видят ~400M токенов суммарно
   max_eval_tokens: 400000
+  num_workers: 4
+  tokenized_cache_dir: .cache/tokenized
 
 clt:
   n_layers: 24
@@ -30,20 +32,23 @@ clt:
   decoder_init_scale: 0.02
 
 # ---------------------------------------------------------------------------
-# 2-GPU параметры
+# 2-GPU параметры (Docker, 2×GPU ≥24GB)
 #
-# Эффективный глобальный batch = 2 × 16 × 1 = 32 последовательности.
-# LR: lr_2gpu = lr_1gpu * sqrt(2) = 0.0002 * 1.414 ≈ 0.000283 → округляем до 0.0003.
+# Эффективный батч = 2 GPU × 32 seq × 1 grad_accum = 64 последовательностей.
+# seq_len=256 → 64 × 256 = 16 384 токенов на optimizer step.
+#
+# LR от базового 1-GPU (eff_batch=32, lr=0.0002):
+#   lr_2gpu = 0.0002 × sqrt(64/32) = 0.0002 × √2 ≈ 0.000283 → 0.0003
 # ---------------------------------------------------------------------------
 training:
-  batch_size_sequences: 16
-  eval_batch_size_sequences: 32
-  gradient_accumulation_steps: 1    # 2 GPU * 16 seq = 32 seq effective batch
-  lr: 0.0003                        # 0.0002 * sqrt(2) ≈ 0.000283, округлено
+  batch_size_sequences: 32          # per GPU; total effective = 64
+  eval_batch_size_sequences: 64
+  gradient_accumulation_steps: 1
+  lr: 0.0003
   weight_decay: 0.01
   lr_scheduler:
     enabled: true
-    warmup_steps: 700               # чуть больше warmup при большем batch
+    warmup_steps: 1000              # дольше warmup — effective batch вдвое больше базового
     min_lr_ratio: 0.1
   lambda_sparsity: 0.00005
   sparsity_warmup_steps: 1000
@@ -56,7 +61,7 @@ training:
   log_every: 50
   eval_every: 500
   save_every: 5000
-  keep_last_checkpoints: 1
+  keep_last_checkpoints: 2
   grad_clip_norm: 1.0
   seed: 42
 
