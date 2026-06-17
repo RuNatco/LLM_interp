@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 import torch
+import torch.distributed as dist
 from torch.utils.data import Dataset, DataLoader, DistributedSampler
 from datasets import load_dataset
 from transformers import PreTrainedTokenizerBase
@@ -145,6 +146,14 @@ def _build_dataloader(
 
     n_workers = num_workers if num_workers is not None else int(data_cfg.get("num_workers", 4))
 
+    # Multi-rank cache race: every DDP rank otherwise runs the same HF .map()
+    # into the same cache dir simultaneously, and the num_proc workers clobber
+    # each other's .arrow shards (FileNotFoundError). Serialize it: rank 0 builds
+    # the cache first; other ranks wait on a barrier, then hit the cache.
+    _dist_active = dist.is_available() and dist.is_initialized() and world_size > 1
+    if _dist_active and rank != 0:
+        dist.barrier()
+
     chunked = _tokenize_and_chunk(
         raw_ds,
         tokenizer,
@@ -154,6 +163,9 @@ def _build_dataloader(
         cfg=cfg,
         num_proc=max(1, n_workers),
     )
+
+    if _dist_active and rank == 0:
+        dist.barrier()
     dataset = ChunkedTokenDataset(chunked)
 
     sampler = None
