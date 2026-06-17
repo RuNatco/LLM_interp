@@ -21,29 +21,6 @@ class ReplacementConfig:
 
 
 class LayerReplacementHook:
-    """
-    MLP-output replacement hook для Qwen + CrossLayerTranscoder.
-
-    CLT обучается на паре:
-
-        layer.mlp input  = mlp_normed_input
-        layer.mlp output = mlp_output
-
-    Поэтому replacement должен вешаться на `layer.mlp`, читать inputs[0] и
-    заменять output этого MLP-модуля. Хук на весь transformer layer был бы
-    методологически неверным: там output уже включает residual path и attention.
-
-    CrossLayerTranscoder.forward(...) ожидает входы сразу по всем слоям.
-    Поэтому внутри MLP forward-hook нельзя напрямую вызывать:
-
-        autoencoder(mlp_input)
-
-    Вместо этого мы вручную делаем online-реконструкцию текущего слоя tgt:
-
-        recon[tgt] = sum_{src <= tgt} features[src] @ decoder[src->tgt]
-
-    где features[src] получаются из сохранённых MLP inputs предыдущих слоёв.
-    """
 
     def __init__(
         self,
@@ -56,7 +33,6 @@ class LayerReplacementHook:
         self.config = config
         self.handles: list[Any] = []
 
-        # cache: layer_idx -> mlp_normed_input
         self.cached_inputs: dict[int, torch.Tensor] = {}
         self.features_by_layer: dict[int, torch.Tensor] = {}
         self.reconstructions_by_layer: dict[int, torch.Tensor] = {}
@@ -321,8 +297,6 @@ class LayerReplacementHook:
             mlp_input = inputs[0]
             mlp_output, rest = self._extract_mlp_output(output)
 
-            # Cache the exact activation point used by CLT training:
-            # layer.mlp input, i.e. post-attention-normalized hidden states.
             self.cached_inputs[layer_idx] = mlp_input
 
             should_replace = self._should_replace_layer(layer_idx)
@@ -330,8 +304,6 @@ class LayerReplacementHook:
             if not should_replace:
                 return output
 
-            # Если checkpoint содержит меньше CLT-слоёв, чем Qwen,
-            # не заменяем слои за пределами CLT.
             if layer_idx >= self.autoencoder.n_layers:
                 return output
 

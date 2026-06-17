@@ -1,10 +1,3 @@
-"""CPU-only tests for replacement control baselines.
-
-These avoid loading a real HF model by faking the minimal structure the
-baseline hooks rely on: model.model.layers[i].mlp, where each mlp is a module
-whose forward returns a [batch, seq, d_model] tensor.
-"""
-
 from __future__ import annotations
 
 import torch
@@ -41,7 +34,6 @@ class _FakeInner(nn.Module):
 
 
 class _FakeModel(nn.Module):
-    """Drives each layer.mlp so forward hooks fire, like a decoder stack would."""
 
     def __init__(self, n_layers: int, d_model: int):
         super().__init__()
@@ -84,13 +76,11 @@ def test_mean_baseline_broadcasts_per_layer_value():
     ):
         outputs = model(hidden)
 
-    # Layer 0 every position equals [0,1,2,3]; layer 1 equals 7 everywhere.
     assert torch.allclose(outputs[0], per_layer[0].view(1, 1, -1).expand(2, 5, 4))
     assert torch.allclose(outputs[1], per_layer[1].view(1, 1, -1).expand(2, 5, 4))
 
 
 def test_baseline_respects_clt_layer_coverage():
-    # CLT only covers 2 of 4 layers -> only layers 0,1 get replaced.
     torch.manual_seed(0)
     model = _FakeModel(n_layers=4, d_model=3)
     hidden = torch.randn(1, 2, 3)
@@ -101,7 +91,6 @@ def test_baseline_respects_clt_layer_coverage():
 
     assert torch.allclose(replaced[0], torch.zeros_like(replaced[0]))
     assert torch.allclose(replaced[1], torch.zeros_like(replaced[1]))
-    # Layers 2,3 untouched.
     assert torch.allclose(replaced[2], clean[2])
     assert torch.allclose(replaced[3], clean[3])
 
@@ -110,12 +99,10 @@ def test_compute_mean_masks_padded_tokens():
     d_model = 3
     model = _FakeModel(n_layers=1, d_model=d_model)
 
-    # Make the MLP an identity so the output equals the input exactly.
     with torch.no_grad():
         model.model.layers[0].mlp.lin.weight.copy_(torch.eye(d_model))
         model.model.layers[0].mlp.lin.bias.zero_()
 
-    # One sequence, 3 positions; last position is padding (mask=0).
     hidden = torch.tensor([[[1.0, 1.0, 1.0],
                             [3.0, 3.0, 3.0],
                             [99.0, 99.0, 99.0]]])
@@ -131,7 +118,6 @@ def test_compute_mean_masks_padded_tokens():
         run_logits=_run,
     )
 
-    # Mean over real tokens only: (1+3)/2 = 2, padding 99 excluded.
     assert torch.allclose(means[0], torch.full((d_model,), 2.0))
 
 
@@ -148,14 +134,12 @@ def test_random_clt_matches_shape_and_is_deterministic():
     assert a.d_model == trained.d_model
     assert a.features_per_layer == trained.features_per_layer
 
-    # Same seed -> identical weights (reproducible control).
     for key in a.state_dict():
         assert torch.allclose(a.state_dict()[key], b.state_dict()[key])
 
 
 def test_random_clt_differs_from_trained_weights():
     trained = _tiny_clt()
-    # Perturb trained weights so they are clearly not at init.
     with torch.no_grad():
         for p in trained.parameters():
             p.add_(1.0)

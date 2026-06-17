@@ -1,22 +1,3 @@
-"""Control baselines for the MLP-output replacement model.
-
-The trained-CLT replacement only *means* something relative to controls. We
-replace the exact same activation point (`layer.mlp` output, "full" mode, the
-same layer set the CLT covers) with deliberately uninformative substitutes and
-measure the same logit-fidelity metrics. The gap between the trained CLT and
-each control is the actual evidence the method recovered real computation:
-
-    zero        -> delete the MLP entirely (how much the MLPs matter at all)
-    mean        -> per-layer dataset mean of the MLP output (drops all
-                   token-specific information, keeps the average contribution)
-    random_clt  -> same CLT architecture, untrained weights (isolates the
-                   contribution of *training* from the contribution of shape)
-
-All hooks here mirror LayerReplacementHook: they hook `layer.mlp`, handle the
-tuple/tensor output packing, and replace exactly the CLT-covered layers so the
-comparison against the trained CLT is apples-to-apples.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -26,10 +7,6 @@ import torch.nn as nn
 
 from qwen_clt.models.cross_layer_transcoder import CrossLayerTranscoder
 
-
-# ---------------------------------------------------------------------------
-# Module discovery (kept consistent with LayerReplacementHook)
-# ---------------------------------------------------------------------------
 
 def get_decoder_layers(model: nn.Module):
     if hasattr(model, "model") and hasattr(model.model, "layers"):
@@ -72,17 +49,11 @@ def _pack_mlp_output(tensor: torch.Tensor, rest):
 
 
 def _covered_layers(model: nn.Module, n_clt_layers: int) -> list[int]:
-    """The layer set the trained CLT replaces, so baselines match it exactly."""
     n_model_layers = len(get_mlp_modules(model))
     return list(range(min(n_model_layers, int(n_clt_layers))))
 
 
-# ---------------------------------------------------------------------------
-# Mean-MLP-output collection (for the mean-ablation baseline)
-# ---------------------------------------------------------------------------
-
 class _MlpOutputTap:
-    """Read-only forward hooks that stash the latest MLP output per layer."""
 
     def __init__(self, model: nn.Module, layers: list[int]):
         self.model = model
@@ -113,12 +84,6 @@ class _MlpOutputTap:
 
 
 class MeanMlpOutputAccumulator:
-    """Running, attention-masked mean of each layer's MLP output.
-
-    Call `observe(...)` once per batch *after* a forward pass that ran inside a
-    `_MlpOutputTap`. Padded positions are excluded via the attention mask so the
-    mean reflects real tokens only.
-    """
 
     def __init__(self, layers: list[int], d_model: int, device: str):
         self.layers = list(layers)
@@ -141,7 +106,7 @@ class MeanMlpOutputAccumulator:
         else:
             mask = attention_mask.to(device=ref.device, dtype=torch.float32)
 
-        weight = mask.unsqueeze(-1)  # [B, S, 1]
+        weight = mask.unsqueeze(-1)
         batch_tokens = float(mask.sum().item())
         if batch_tokens <= 0.0:
             return
@@ -173,12 +138,6 @@ def compute_mean_mlp_outputs(
     run_logits,
     progress=None,
 ) -> dict[int, torch.Tensor]:
-    """One pass over the eval set to get per-layer mean MLP outputs.
-
-    `encoded_batches` is an iterable of already-encoded dicts (with
-    attention_mask). `run_logits(model, encoded)` runs the forward pass; its
-    return value is ignored here (we only need the tapped activations).
-    """
     layers = _covered_layers(model, n_clt_layers)
     accumulator = MeanMlpOutputAccumulator(layers, d_model, device)
 
@@ -192,16 +151,7 @@ def compute_mean_mlp_outputs(
     return accumulator.finalize()
 
 
-# ---------------------------------------------------------------------------
-# Constant-substitution baselines: zero and mean
-# ---------------------------------------------------------------------------
-
 class ConstantReplacementHook:
-    """Replace `layer.mlp` outputs with a constant: zeros or per-layer mean.
-
-    mode="zero": output -> zeros_like(output)
-    mode="mean": output -> per_layer_mean[layer] broadcast over [batch, seq]
-    """
 
     def __init__(
         self,
@@ -263,23 +213,12 @@ class ConstantReplacementHook:
         self.remove()
 
 
-# ---------------------------------------------------------------------------
-# Random untrained CLT baseline
-# ---------------------------------------------------------------------------
-
 def build_random_clt_like(
     autoencoder: CrossLayerTranscoder,
     *,
     device: str,
     seed: int = 0,
 ) -> CrossLayerTranscoder:
-    """A fresh, untrained CLT with the same shape/normalization as `autoencoder`.
-
-    Reuses the trained CLT's normalization buffers (if any) so the only
-    difference is the *learned* encoder/decoder/threshold weights. The global
-    RNG is snapshotted and restored so seeding here has no side effects on the
-    rest of the eval.
-    """
     rng_state = torch.get_rng_state()
     try:
         torch.manual_seed(int(seed))
@@ -298,8 +237,6 @@ def build_random_clt_like(
     finally:
         torch.set_rng_state(rng_state)
 
-    # Match learned normalization statistics so the control differs only in the
-    # trained read/write weights, not in the input/output scaling.
     random_state = random_clt.state_dict()
     trained_state = autoencoder.state_dict()
     for key in random_state:

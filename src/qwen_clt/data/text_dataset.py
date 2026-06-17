@@ -29,10 +29,6 @@ def _wrap_instruct(text: str, cfg: dict, tokenizer: PreTrainedTokenizerBase) -> 
     return f"System: {system}\nUser: {user_prefix}\n{text}\nAssistant:"
 
 
-# ---------------------------------------------------------------------------
-# Pre-tokenized dataset
-# ---------------------------------------------------------------------------
-
 def _tokenize_and_chunk(
     dataset,
     tokenizer: PreTrainedTokenizerBase,
@@ -43,17 +39,11 @@ def _tokenize_and_chunk(
     cfg: dict,
     num_proc: int = 8,
 ) -> Dataset:
-    """Tokenize the whole HF dataset in parallel, then chunk into seq_len windows.
-
-    Uses HF datasets .map() with batched=True for multi-process CPU tokenization.
-    Result is cached automatically by HF datasets (keyed on tokenizer + seq_len).
-    """
 
     def tokenize_batch(batch):
         texts = batch[text_field]
         if use_chat_template:
             texts = [_wrap_instruct(t, cfg, tokenizer) for t in texts]
-        # Tokenize without truncation — we'll chunk manually
         enc = tokenizer(
             texts,
             add_special_tokens=True,
@@ -91,7 +81,6 @@ def _tokenize_and_chunk(
 
 
 class ChunkedTokenDataset(Dataset):
-    """Thin wrapper around a pre-tokenized HF dataset."""
 
     def __init__(self, hf_dataset):
         self._ds = hf_dataset
@@ -120,21 +109,12 @@ def _build_dataloader(
     shuffle: bool = True,
     num_workers: int | None = None,
 ) -> DataLoader:
-    """Build a DataLoader over a pre-tokenized + chunked HF dataset.
-
-    Tokenization result is cached by HF datasets, so the second run is instant.
-    Uses DistributedSampler for multi-GPU, which splits the dataset evenly
-    across ranks without data overlap.
-    """
     data_cfg = cfg["data"]
     model_cfg = cfg["model"]
     seq_len = int(data_cfg["seq_len"])
     use_chat_template = bool(model_cfg.get("chat_template", False))
     text_field = data_cfg.get("text_field", "text")
 
-    # Optional override for the HF datasets cache location. The raw dataset
-    # download AND the derived tokenize/chunk .map() caches both live here,
-    # so re-runs skip tokenization entirely.
     cache_dir = data_cfg.get("tokenized_cache_dir") or None
 
     raw_ds = load_dataset(
@@ -146,10 +126,6 @@ def _build_dataloader(
 
     n_workers = num_workers if num_workers is not None else int(data_cfg.get("num_workers", 4))
 
-    # Multi-rank cache race: every DDP rank otherwise runs the same HF .map()
-    # into the same cache dir simultaneously, and the num_proc workers clobber
-    # each other's .arrow shards (FileNotFoundError). Serialize it: rank 0 builds
-    # the cache first; other ranks wait on a barrier, then hit the cache.
     _dist_active = dist.is_available() and dist.is_initialized() and world_size > 1
     if _dist_active and rank != 0:
         dist.barrier()
@@ -177,7 +153,7 @@ def _build_dataloader(
             shuffle=shuffle,
             drop_last=True,
         )
-        shuffle = False  # DistributedSampler handles shuffle
+        shuffle = False
 
     return DataLoader(
         dataset,
@@ -192,10 +168,6 @@ def _build_dataloader(
     )
 
 
-# ---------------------------------------------------------------------------
-# Public iterators (unchanged signature — drop-in replacement)
-# ---------------------------------------------------------------------------
-
 def iter_token_batches(
     cfg: dict,
     tokenizer: PreTrainedTokenizerBase,
@@ -203,11 +175,6 @@ def iter_token_batches(
     rank: int = 0,
     world_size: int = 1,
 ) -> Iterator[TokenBatch]:
-    """Iterate over training batches using a pre-tokenized cached dataset.
-
-    On first call tokenizes the whole dataset (parallel, cached to disk).
-    Subsequent calls are instant. Uses DistributedSampler for multi-GPU.
-    """
     data_cfg = cfg["data"]
     max_tokens = int(data_cfg.get("max_train_tokens", 1_000_000))
     batch_size = int(cfg["training"]["batch_size_sequences"])
@@ -224,11 +191,8 @@ def iter_token_batches(
 
     emitted_tokens = 0
     epoch = 0
-    # Loop over the dataloader repeatedly until max_tokens is reached.
-    # One pass through the loader may not be enough for large max_train_tokens.
     while True:
         if hasattr(loader.sampler, "set_epoch"):
-            # Advance epoch so DistributedSampler reshuffles each pass
             loader.sampler.set_epoch(epoch)
         epoch += 1
 
@@ -248,10 +212,6 @@ def iter_eval_batches(
     tokenizer: PreTrainedTokenizerBase,
     device: str,
 ) -> Iterator[TokenBatch]:
-    """Iterate over the test/validation split for reconstruction eval.
-
-    Uses data.eval_split (default: "test"). Falls back to "validation".
-    """
     data_cfg = cfg["data"]
     training_cfg = cfg["training"]
 
@@ -271,7 +231,7 @@ def iter_eval_batches(
             split=split,
             batch_size=batch_size,
             rank=0,
-            world_size=1,   # eval runs on rank 0 only
+            world_size=1,
             shuffle=False,
         )
         emitted = 0

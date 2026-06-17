@@ -27,16 +27,6 @@ def build_layer_sparsity_weights(
     min_weight: float = 1.0,
     max_weight: float = 4.0,
 ) -> list[float]:
-    """Per-layer sparsity multipliers.
-
-    Deep layers (high layer_idx) accumulate cross-layer decoder paths from all
-    preceding layers, making them harder to sparsify with a global λ. Applying
-    higher per-layer multipliers to deep layers counteracts this.
-
-    mode="linear"  : weight = min_weight + (max_weight - min_weight) * layer_idx / (n_layers - 1)
-    mode="quadratic": same but with (layer_idx / (n_layers - 1))^2 — steeper ramp at the end
-    mode="uniform"  : all weights = 1.0 (original behavior)
-    """
     if n_layers <= 1:
         return [1.0] * n_layers
     if mode == "uniform":
@@ -57,12 +47,6 @@ def tanh_sparsity_loss(
     c: float = 1.0,
     layer_weights: list[float] | None = None,
 ) -> torch.Tensor:
-    """Tanh sparsity penalty with optional per-layer multipliers.
-
-    layer_weights lets you apply higher sparsity pressure to deep layers,
-    which otherwise accumulate more decoder paths and stay denser.
-    If None, all layers get equal weight (original behavior).
-    """
     n_layers = len(features_by_layer)
     if layer_weights is None:
         layer_weights = [1.0] * n_layers

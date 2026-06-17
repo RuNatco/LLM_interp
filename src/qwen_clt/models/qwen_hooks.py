@@ -49,14 +49,6 @@ def load_qwen_model_and_tokenizer(cfg: dict[str, Any]):
 
 
 class QwenMLPHookCollector:
-    """Collects MLP normalized inputs and MLP outputs from Qwen-like HF models.
-
-    For Qwen2.5 layers, the MLP consumes post-attention-normalized hidden states:
-        x_l = layer.post_attention_layernorm(hidden_states_after_attention)
-        y_l = layer.mlp(x_l)
-
-    We hook into each layer.mlp module. The module input is x_l and output is y_l.
-    """
 
     def __init__(self, model):
         self.model = model
@@ -66,7 +58,6 @@ class QwenMLPHookCollector:
 
     def _make_hook(self, layer_idx: int):
         def hook(module, inputs, output):
-            # inputs[0], output: [batch, seq, d_model]
             self.mlp_inputs[layer_idx] = inputs[0]
             self.mlp_outputs[layer_idx] = output
         return hook

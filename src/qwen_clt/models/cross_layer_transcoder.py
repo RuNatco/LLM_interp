@@ -24,11 +24,6 @@ def clt_normalization_kwargs(clt_cfg: dict) -> dict:
 
 
 def clt_jumprelu_kwargs(clt_cfg: dict) -> dict:
-    """Read JumpReLU hyperparameters (init threshold + STE bandwidth) from config.
-
-    Supports either a nested `clt.jumprelu` block or a top-level `init_threshold`
-    for backward compatibility.
-    """
     jumprelu_cfg = clt_cfg.get("jumprelu", {}) or {}
     init_threshold = float(
         jumprelu_cfg.get("init_threshold", clt_cfg.get("init_threshold", 0.05))
@@ -40,20 +35,6 @@ def clt_jumprelu_kwargs(clt_cfg: dict) -> dict:
 
 
 class _JumpReLU(torch.autograd.Function):
-    """JumpReLU activation with a straight-through estimator for the threshold.
-
-    Forward:  out = z * H(z - theta)          (hard gate, theta > 0)
-
-    Backward (STE, rectangular kernel K of width = bandwidth, centered at z=theta):
-      d out / d z      = H(z - theta)                       (ReLU-style gate)
-      d out / d theta  = -(theta / bandwidth) * K((z - theta)/bandwidth)
-
-    The threshold thus receives gradient from any loss that flows through the
-    activation magnitude: reconstruction pulls theta down (admit features),
-    the sparsity penalty pulls it up (drop near-boundary features). Without this
-    the threshold is a dead parameter and JumpReLU degenerates into ReLU.
-    Reference: Rajamanoharan et al., 2024 (JumpReLU SAEs).
-    """
 
     @staticmethod
     def forward(ctx, z: torch.Tensor, threshold: torch.Tensor, bandwidth: float):
@@ -72,7 +53,6 @@ class _JumpReLU(torch.autograd.Function):
         within = ((z - threshold).abs() <= (0.5 * eps)).to(grad_out.dtype)
         grad_threshold = grad_out * (-(threshold) / eps) * within
 
-        # Reduce over broadcast (non-feature) dims back to `threshold`'s shape.
         while grad_threshold.dim() > threshold.dim():
             grad_threshold = grad_threshold.sum(dim=0)
         for i, (g_dim, t_dim) in enumerate(zip(grad_threshold.shape, threshold.shape)):
@@ -83,12 +63,6 @@ class _JumpReLU(torch.autograd.Function):
 
 
 class CrossLayerTranscoder(nn.Module):
-    """Small-scale dense Cross-Layer Transcoder.
-
-    Feature layer src reads MLP input at src and writes to MLP outputs at tgt >= src.
-    This v0 implementation is intentionally simple and dense. For larger runs,
-    replace triangular decoder loops with chunked/sparse kernels.
-    """
 
     def __init__(
         self,
@@ -154,8 +128,6 @@ class CrossLayerTranscoder(nn.Module):
             )
         self.jumprelu_init_threshold = float(init_threshold)
         self.jumprelu_bandwidth = float(jumprelu_bandwidth)
-        # theta = exp(log_threshold) keeps the threshold strictly positive; it is
-        # learned via the straight-through estimator in _JumpReLU.
         self.log_threshold = nn.Parameter(
             torch.full(
                 (self.n_layers, self.features_per_layer),
@@ -297,7 +269,6 @@ class CrossLayerTranscoder(nn.Module):
 
     @property
     def effective_thresholds(self) -> torch.Tensor:
-        """Positive per-(layer, feature) JumpReLU thresholds: theta = exp(log_threshold)."""
         return self.log_threshold.exp()
 
     def effective_threshold(self, layer_idx: int) -> torch.Tensor:

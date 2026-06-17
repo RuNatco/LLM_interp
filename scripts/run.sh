@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# ---------------------------------------------------------------------------
-# Unified training launcher: 1-GPU (python3) or N-GPU DDP (torchrun).
-#
-# Usage:
-#   bash scripts/run.sh --gpus 1 --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
-#   bash scripts/run.sh --gpus 4 --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
-#   bash scripts/run.sh --gpus 2 --config configs/... --continue-from outputs/.../clt_step_5000.pt
-#
-# In Docker, called by docker-compose services (train / pipeline) with the
-# GPU count passed through the GPUS env var.
-# ---------------------------------------------------------------------------
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -63,20 +52,15 @@ if ! [[ "${GPUS}" =~ ^[0-9]+$ ]] || [[ "${GPUS}" -lt 1 ]]; then
 fi
 
 if [[ "${GPUS}" -eq 1 ]]; then
-  # ── 1-GPU: plain python, no torchrun ───────────────────────────────────────
   echo "[run.sh] Mode: 1-GPU  config: ${CONFIG}"
   exec python3 scripts/01_train_clt.py --config "${CONFIG}"
 else
-  # ── N-GPU DDP via torchrun ──────────────────────────────────────────────────
   echo "[run.sh] Mode: ${GPUS}-GPU DDP (torchrun)  config: ${CONFIG}"
 
-  # Single-node: no InfiniBand, PCIe/NVLink P2P enabled.
   export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
   export NCCL_P2P_DISABLE="${NCCL_P2P_DISABLE:-0}"
   export NCCL_DEBUG="${NCCL_DEBUG:-WARN}"
-  # One OpenMP thread per DDP process to avoid CPU oversubscription.
   export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
-  # Use PyTorch-bundled NCCL (avoids system NCCL version mismatch).
   TORCH_LIB="$(python3 -c 'import torch, os; print(os.path.dirname(torch.__file__))')/lib"
   export LD_LIBRARY_PATH="${TORCH_LIB}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 

@@ -71,7 +71,6 @@ def test_replacement_hook_applies_feature_interventions_in_forward_pass():
     with torch.no_grad():
         autoencoder.encoders[0].copy_(torch.eye(d_model))
         autoencoder.encoder_bias[0].zero_()
-        # Drive theta = exp(log_threshold) -> ~0 so JumpReLU behaves like ReLU here.
         autoencoder.log_threshold.fill_(-30.0)
         autoencoder.decoders["0->0"].zero_()
         autoencoder.decoders["0->0"][0, 0] = 2.0

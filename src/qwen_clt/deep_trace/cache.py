@@ -59,7 +59,6 @@ def _get_layers(model: nn.Module):
 
 
 class QwenDeepTraceCollector:
-    """Collects a compact typed trace for Qwen-like decoder layers."""
 
     def __init__(self, model: nn.Module):
         self.model = model

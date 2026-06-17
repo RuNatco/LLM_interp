@@ -13,19 +13,6 @@ from qwen_clt.replacement import LayerReplacementHook, ReplacementConfig
 
 
 class ProxyQwenReplacementModel:
-    """Proxy wrapper for CLT feature analysis.
-
-    It exposes the CLT feature space needed by v0 attribution graphs and uses
-    LayerReplacementHook for causal feature interventions inside a real forward
-    pass:
-
-    - collect original Qwen MLP inputs/outputs;
-    - encode them with the trained CLT;
-    - run feature interventions through an in-forward CLT replacement hook.
-
-    Use qwen_clt.replacement.LayerReplacementHook when the experiment needs
-    replacement logits and metrics from a real forward pass.
-    """
 
     def __init__(self, base_model, tokenizer, clt: CrossLayerTranscoder, cfg: dict):
         self.base_model = base_model
@@ -64,8 +51,6 @@ class ProxyQwenReplacementModel:
             decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
             **clt_normalization_kwargs(clt_cfg),
         ).to(device)
-        # strict=True: any key mismatch indicates a real architecture divergence
-        # and should surface immediately rather than silently produce wrong results.
         try:
             clt.load_state_dict(ckpt["model_state_dict"], strict=True)
         except RuntimeError as exc:
@@ -129,23 +114,8 @@ class ProxyQwenReplacementModel:
 
     @torch.no_grad()
     def feature_intervention(self, prompt: str, interventions: list[FeatureIntervention]):
-        """Run feature interventions causally inside the CLT replacement model.
-
-        Runs exactly 2 forward passes (baseline replacement + intervened),
-        reusing the tokenized input.
-
-        Returned logits:
-        - `logits`: original Qwen logits (from baseline pass, no replacement);
-        - `replacement_logits`: logits with CLT reconstruction replacing MLP outputs;
-        - `intervened_logits`: logits with the same replacement plus feature edits.
-
-        The causal feature effect should be measured against `replacement_logits`,
-        because CLT reconstruction itself can move logits relative to the original
-        model.
-        """
         input_ids, attention_mask = self.tokenize(prompt)
 
-        # Pass 1: baseline replacement (also captures original logits via hook)
         replacement_config = ReplacementConfig()
         with LayerReplacementHook(
             model=self.base_model,
@@ -158,12 +128,10 @@ class ProxyQwenReplacementModel:
             )
             replacement_logits = out.logits.detach()
 
-        # Recompute original logits + activations without replacement in one pass
         acts = self.collector.run(input_ids, attention_mask)
         original_logits = acts.logits
         features, recons = self.clt(acts.mlp_inputs)
 
-        # Pass 2: intervened replacement
         intervention_config = ReplacementConfig(
             feature_interventions=tuple(interventions),
         )

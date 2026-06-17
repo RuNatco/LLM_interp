@@ -1,10 +1,9 @@
 name: qwen-clt
 
-# ── shared base ──────────────────────────────────────────────────────────────
 x-base: &base
   build: .
   working_dir: /workspace
-  ipc: host           # DDP requires shared memory across processes
+  ipc: host
   volumes:
     - ./outputs:/workspace/outputs
     - ./configs:/workspace/configs
@@ -18,9 +17,6 @@ x-base: &base
     OMP_NUM_THREADS: "1"
     TOKENIZERS_PARALLELISM: "false"
 
-# Multi-GPU services reserve exactly ${GPUS} cards (default 1); the same value
-# is passed to torchrun (--nproc_per_node). To pick which physical cards are
-# used, set CUDA_VISIBLE_DEVICES.
 x-gpu-multi: &gpu-multi
   deploy:
     resources:
@@ -30,7 +26,6 @@ x-gpu-multi: &gpu-multi
             count: ${GPUS:-1}
             capabilities: [gpu]
 
-# Eval / Deep Trace run on a single process -> exactly 1 GPU.
 x-gpu-single: &gpu-single
   deploy:
     resources:
@@ -40,14 +35,8 @@ x-gpu-single: &gpu-single
             count: 1
             capabilities: [gpu]
 
-# ── services ─────────────────────────────────────────────────────────────────
 services:
 
-  # --------------------------------------------------------------------------
-  # Training only (1 stage), N-GPU.
-  #   GPUS=4 docker compose run --rm train
-  #   GPUS=2 CONFIG=configs/..._continue_v1.yaml docker compose run --rm train
-  # --------------------------------------------------------------------------
   train:
     <<: [*base, *gpu-multi]
     command: >
@@ -55,24 +44,12 @@ services:
       --gpus ${GPUS:-1}
       --config ${CONFIG:-configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml}
 
-  # --------------------------------------------------------------------------
-  # Full reproducible pipeline: train (3 stages, N-GPU) -> eval+baselines
-  # -> Deep Trace. Eval and Deep Trace run on a single process.
-  #   GPUS=4 docker compose run --rm pipeline
-  #   GPUS=4 docker compose run --rm pipeline \
-  #       bash scripts/11_run_final_training_pipeline.sh --gpus 4 --skip-train
-  # --------------------------------------------------------------------------
   pipeline:
     <<: [*base, *gpu-multi]
     command: >
       bash scripts/11_run_final_training_pipeline.sh
       --gpus ${GPUS:-1}
 
-  # --------------------------------------------------------------------------
-  # Replacement-model eval on the final checkpoint (control baselines included
-  # via the config's replacement_eval.baselines block). Single GPU.
-  #   docker compose run --rm eval
-  # --------------------------------------------------------------------------
   eval:
     <<: [*base, *gpu-single]
     entrypoint: ["python3", "scripts/02_eval_replacement_model.py"]
@@ -80,10 +57,6 @@ services:
       - "--config"
       - "configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml"
 
-  # --------------------------------------------------------------------------
-  # Deep Trace stage-2 prompt suite on the final checkpoint. Single GPU.
-  #   docker compose run --rm deep-trace
-  # --------------------------------------------------------------------------
   deep-trace:
     <<: [*base, *gpu-single]
     entrypoint: ["python3", "scripts/09_build_deep_trace_prompt_suite.py"]
@@ -101,6 +74,5 @@ services:
       - "--causal-top-k"
       - "8"
 
-# ── named volumes (persist across container restarts) ────────────────────────
 volumes:
-  hf_cache:   # HuggingFace model weights + dataset cache (incl. tokenized map cache)
+  hf_cache:

@@ -38,15 +38,6 @@ def load_checkpoint(path: str | Path, map_location: str = "cpu") -> dict[str, An
 
 
 def infer_n_layers_from_state_dict(state_dict: dict[str, torch.Tensor]) -> int:
-    """
-    В checkpoint encoders лежат как:
-        encoders.0
-        encoders.1
-        ...
-        encoders.N
-
-    Поэтому фактическое число слоёв можно восстановить по ключам.
-    """
 
     encoder_indices = []
 

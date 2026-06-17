@@ -26,16 +26,7 @@ from qwen_clt.utils.seed import set_seed
 from qwen_clt.utils.io import save_checkpoint
 
 
-# ---------------------------------------------------------------------------
-# Distributed helpers
-# ---------------------------------------------------------------------------
-
 def _init_distributed() -> tuple[int, int, int]:
-    """Initialize torch.distributed if torchrun set the env vars.
-
-    Returns (local_rank, global_rank, world_size).
-    If not running under torchrun, returns (0, 0, 1) — single-GPU mode.
-    """
     if "LOCAL_RANK" not in os.environ:
         return 0, 0, 1
 
@@ -44,11 +35,6 @@ def _init_distributed() -> tuple[int, int, int]:
     world_size = int(os.environ.get("WORLD_SIZE", 1))
 
     if not dist.is_initialized():
-        # backend выбирается через env var DIST_BACKEND (default: nccl).
-        # Если NCCL несовместим с установленным CUDA runtime — используй gloo:
-        #   export DIST_BACKEND=gloo
-        # Gloo работает через shared memory на одной машине, не зависит от
-        # версии NCCL/CUDA, но медленнее NCCL на ~20-30% из-за CPU allreduce.
         backend = os.environ.get("DIST_BACKEND", "nccl")
         dist.init_process_group(backend=backend)
         if rank == 0:
@@ -67,10 +53,6 @@ def _is_main(rank: int) -> bool:
     return rank == 0
 
 
-# ---------------------------------------------------------------------------
-# LR scheduler: linear warmup + cosine decay
-# ---------------------------------------------------------------------------
-
 def build_lr_scheduler(
     optimizer: torch.optim.Optimizer,
     *,
@@ -78,7 +60,6 @@ def build_lr_scheduler(
     total_steps: int,
     min_lr_ratio: float = 0.1,
 ) -> torch.optim.lr_scheduler.LambdaLR:
-    """Linear warmup for `warmup_steps`, then cosine decay to `min_lr_ratio * base_lr`."""
     if warmup_steps < 0:
         raise ValueError(f"warmup_steps must be >= 0. Got {warmup_steps}.")
     if total_steps <= 0:
@@ -88,9 +69,7 @@ def build_lr_scheduler(
 
     def lr_lambda(step: int) -> float:
         if step < warmup_steps:
-            # linear warmup from 0 to 1
             return float(step + 1) / float(max(warmup_steps, 1))
-        # cosine decay from 1 to min_lr_ratio
         decay_steps = max(total_steps - warmup_steps, 1)
         progress = float(step - warmup_steps) / float(decay_steps)
         progress = min(progress, 1.0)
@@ -100,25 +79,16 @@ def build_lr_scheduler(
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
 
-# ---------------------------------------------------------------------------
-# Sparsity lambda schedule: linear warmup from 0 to target lambda
-# ---------------------------------------------------------------------------
-
 def get_lambda_sparsity(
     step: int,
     *,
     target_lambda: float,
     warmup_steps: int,
 ) -> float:
-    """Ramp sparsity penalty from 0 to target_lambda over warmup_steps."""
     if warmup_steps <= 0:
         return target_lambda
     return target_lambda * min(1.0, float(step) / float(warmup_steps))
 
-
-# ---------------------------------------------------------------------------
-# Utilities
-# ---------------------------------------------------------------------------
 
 def resolve_step_limits(training_cfg: dict, grad_accum: int) -> tuple[int, int | None]:
     if "max_optimizer_steps" in training_cfg:
@@ -193,10 +163,6 @@ def load_initial_clt_weights(
     return checkpoint
 
 
-# ---------------------------------------------------------------------------
-# Eval on held-out split
-# ---------------------------------------------------------------------------
-
 @torch.no_grad()
 def eval_clt(
     clt: CrossLayerTranscoder,
@@ -205,11 +171,6 @@ def eval_clt(
     tokenizer,
     device: str,
 ) -> dict:
-    """Run reconstruction eval on the validation split.
-
-    Returns a dict with eval_nmse_mean, eval_l0_mean, eval_nmse_by_layer,
-    eval_l0_by_layer.
-    """
     clt.eval()
     all_features: list[list[torch.Tensor]] = []
     all_recons: list[list[torch.Tensor]] = []
@@ -228,7 +189,6 @@ def eval_clt(
         return {}
 
     n_layers = len(all_features[0])
-    # average per-layer metrics across batches
     nmse_by_layer: list[float] = []
     l0_by_layer: list[float] = []
 
@@ -250,25 +210,19 @@ def eval_clt(
     }
 
 
-# ---------------------------------------------------------------------------
-# Main training loop
-# ---------------------------------------------------------------------------
-
 def train_clt(cfg: dict) -> Path:
     local_rank, rank, world_size = _init_distributed()
     is_main = _is_main(rank)
 
-    seed = int(cfg["training"].get("seed", 42)) + rank  # unique seed per rank
+    seed = int(cfg["training"].get("seed", 42)) + rank
     set_seed(seed)
 
-    # Device: use local_rank for multi-GPU, otherwise respect config
     if world_size > 1:
         device = f"cuda:{local_rank}"
     else:
         device = cfg["model"].get("device", "cuda" if torch.cuda.is_available() else "cpu")
 
     output_dir = Path(cfg["project"]["output_dir"])
-    # exist_ok=True — все ранки могут создавать папку одновременно, гонки нет
     output_dir.mkdir(parents=True, exist_ok=True)
 
     model, tokenizer = load_qwen_model_and_tokenizer(cfg)
@@ -285,8 +239,6 @@ def train_clt(cfg: dict) -> Path:
     ).to(device)
 
     training_cfg = cfg["training"]
-    # CLT_OVERRIDE_INIT_CHECKPOINT: выставляется scripts/run.sh (--continue-from),
-    # имеет приоритет над training.init_from_checkpoint из конфига.
     init_checkpoint_path = (
         os.environ.get("CLT_OVERRIDE_INIT_CHECKPOINT")
         or training_cfg.get("init_from_checkpoint")
@@ -298,9 +250,7 @@ def train_clt(cfg: dict) -> Path:
         init_checkpoint = load_initial_clt_weights(clt, init_checkpoint_path)
         clt.to(device)
 
-    # Wrap CLT in DDP for multi-GPU training.
-    # The base Qwen model stays on device as plain inference — no grad, no DDP needed.
-    clt_ddp: torch.nn.Module = clt  # alias used for forward pass
+    clt_ddp: torch.nn.Module = clt
     if world_size > 1:
         clt_ddp = DDP(clt, device_ids=[local_rank], output_device=local_rank)
         if is_main:
@@ -323,7 +273,6 @@ def train_clt(cfg: dict) -> Path:
         grad_accum=grad_accum,
     )
 
-    # LR scheduler
     scheduler_cfg = training_cfg.get("lr_scheduler") or {}
     warmup_steps = int(scheduler_cfg.get("warmup_steps", 0))
     min_lr_ratio = float(scheduler_cfg.get("min_lr_ratio", 0.1))
@@ -336,11 +285,6 @@ def train_clt(cfg: dict) -> Path:
         min_lr_ratio=min_lr_ratio,
     ) if use_scheduler else None
 
-    # Scheduler state восстанавливается ТОЛЬКО при явном resume
-    # (training.restore_scheduler_state: true). При stage-continuation
-    # (continue_v1/v2 конфиги) scheduler должен начинаться заново: иначе
-    # last_epoch из прошлой стадии превышает total_steps новой, progress
-    # клампится в 1.0 и lr навсегда застревает на min_lr без warmup.
     restore_scheduler = bool(training_cfg.get("restore_scheduler_state", False))
     if scheduler is not None and init_checkpoint is not None and restore_scheduler:
         saved_scheduler = init_checkpoint.get("scheduler_state_dict")
@@ -358,8 +302,6 @@ def train_clt(cfg: dict) -> Path:
     sparsity_c = float(training_cfg.get("sparsity_c", 1.0))
     grad_clip = float(training_cfg.get("grad_clip_norm", 1.0))
 
-    # Per-layer sparsity weights: deep layers get higher pressure to stay sparse.
-    # Controlled by training.layer_sparsity_weights (mode/min/max).
     lsw_cfg = training_cfg.get("layer_sparsity_weights") or {}
     layer_weights = build_layer_sparsity_weights(
         clt.n_layers,
@@ -446,7 +388,6 @@ def train_clt(cfg: dict) -> Path:
                         f"l0={row['l0_mean']:.2f}"
                     )
 
-                # Eval on held-out split (rank 0 only)
                 if is_main and eval_every > 0 and optimizer_step % eval_every == 0:
                     eval_metrics = eval_clt(
                         clt, collector, cfg, tokenizer, device
@@ -498,7 +439,6 @@ def train_clt(cfg: dict) -> Path:
 
     pbar.close()
 
-    # Barrier: all ranks finish before rank 0 writes the final checkpoint
     if world_size > 1:
         dist.barrier()
 
