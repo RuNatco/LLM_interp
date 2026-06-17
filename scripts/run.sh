@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Unified training launcher: 1-GPU (python3) or 2-GPU DDP (torchrun).
+# Unified training launcher: 1-GPU (python3) or N-GPU DDP (torchrun).
 #
 # Usage:
-#   bash scripts/run.sh --gpus 1 --config configs/qwen2_5_0_5b_4096f_v1.yaml
-#   bash scripts/run.sh --gpus 2 --config configs/qwen2_5_0_5b_4096f_v1_2gpu.yaml
+#   bash scripts/run.sh --gpus 1 --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
+#   bash scripts/run.sh --gpus 4 --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 #   bash scripts/run.sh --gpus 2 --config configs/... --continue-from outputs/.../clt_step_5000.pt
 #
-# In Docker, called automatically by docker-compose services train-1gpu / train-2gpu.
+# In Docker, called by docker-compose services (train / pipeline) with the
+# GPU count passed through the GPUS env var.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -21,10 +22,10 @@ CONTINUE_CKPT=""
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/run.sh --gpus <1|2> --config <path> [options]
+  bash scripts/run.sh --gpus <N> --config <path> [options]
 
 Options:
-  --gpus N               GPUs to use: 1 (single process) or 2 (DDP via torchrun).
+  --gpus N               GPUs to use: 1 (single process) or N>1 (DDP via torchrun).
   --config <path>        Path to YAML config (required).
   --continue-from <ckpt> Checkpoint path to resume training from.
                          Overrides training.init_from_checkpoint in the config.

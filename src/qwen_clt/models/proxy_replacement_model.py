@@ -5,6 +5,7 @@ import torch
 from qwen_clt.models.cross_layer_transcoder import (
     CrossLayerTranscoder,
     clt_normalization_kwargs,
+    clt_jumprelu_kwargs,
 )
 from qwen_clt.models.qwen_hooks import load_qwen_model_and_tokenizer, QwenMLPHookCollector
 from qwen_clt.interventions import FeatureIntervention
@@ -59,7 +60,7 @@ class ProxyQwenReplacementModel:
             n_layers=int(clt_cfg["n_layers"]),
             d_model=int(clt_cfg["d_model"]),
             features_per_layer=int(clt_cfg["features_per_layer"]),
-            init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
+            **clt_jumprelu_kwargs(clt_cfg),
             decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
             **clt_normalization_kwargs(clt_cfg),
         ).to(device)

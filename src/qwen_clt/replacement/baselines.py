@@ -287,6 +287,8 @@ def build_random_clt_like(
             n_layers=autoencoder.n_layers,
             d_model=autoencoder.d_model,
             features_per_layer=autoencoder.features_per_layer,
+            init_threshold=autoencoder.jumprelu_init_threshold,
+            jumprelu_bandwidth=autoencoder.jumprelu_bandwidth,
             decoder_init_scale=autoencoder.decoder_init_scale,
             normalize_inputs=autoencoder.normalize_inputs,
             normalize_targets=autoencoder.normalize_targets,

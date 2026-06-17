@@ -14,6 +14,7 @@ from qwen_clt.models.qwen_hooks import load_qwen_model_and_tokenizer, QwenMLPHoo
 from qwen_clt.models.cross_layer_transcoder import (
     CrossLayerTranscoder,
     clt_normalization_kwargs,
+    clt_jumprelu_kwargs,
 )
 from qwen_clt.training.losses import (
     reconstruction_loss,
@@ -278,14 +279,14 @@ def train_clt(cfg: dict) -> Path:
         n_layers=int(clt_cfg["n_layers"]),
         d_model=int(clt_cfg["d_model"]),
         features_per_layer=int(clt_cfg["features_per_layer"]),
-        init_threshold=float(clt_cfg.get("init_threshold", 0.0)),
+        **clt_jumprelu_kwargs(clt_cfg),
         decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
         **clt_normalization_kwargs(clt_cfg),
     ).to(device)
 
     training_cfg = cfg["training"]
-    # CLT_OVERRIDE_INIT_CHECKPOINT: выставляется scripts/run.sh (--continue-from)
-    # и scripts/12_train_multigpu.sh (--continue-ckpt), имеет приоритет над конфигом.
+    # CLT_OVERRIDE_INIT_CHECKPOINT: выставляется scripts/run.sh (--continue-from),
+    # имеет приоритет над training.init_from_checkpoint из конфига.
     init_checkpoint_path = (
         os.environ.get("CLT_OVERRIDE_INIT_CHECKPOINT")
         or training_cfg.get("init_from_checkpoint")

@@ -6,19 +6,24 @@
 CLT — разреженный автоэнкодер: энкодер на каждый слой читает вход MLP,
 треугольная матрица декодеров `src→tgt` реконструирует выходы MLP всех
 последующих слоёв. После обучения все 24 MLP-блока Qwen заменяются
-реконструкциями CLT, и полученное пространство фич используется для
-построения каузальных Deep Trace графов.
+реконструкциями CLT (replacement model), и полученное пространство фич
+используется для построения каузальных Deep Trace графов.
+
+Цель проекта — **воспроизвести этот interpretability-пайплайн и показать его
+состоятельность** на одной небольшой модели, с возможностью запуска через
+Docker на нескольких GPU.
 
 Полный маршрут:
 
 ```text
 train CLT (stage 1, с нуля)
--> continue from checkpoint (stage 2, low LR)
--> replacement model evaluation (gate)
+-> continue from checkpoint (stage 2)
+-> final low-LR continuation (stage 3)
+-> replacement model evaluation + control baselines (gate)
 -> Deep Trace stage 2 prompt suite (gate)
 ```
 
-Подробное описание каждого шага: [PIPELINE_DESCRIPTION.md](PIPELINE_DESCRIPTION.md).
+Детали стадий и ожидаемые gates: [FINAL_TRAINING_PIPELINE.md](FINAL_TRAINING_PIPELINE.md).
 Запуск в Docker: [DOCKER.md](DOCKER.md).
 
 ---
@@ -27,17 +32,21 @@ train CLT (stage 1, с нуля)
 
 ### Docker (рекомендуется)
 
+Степень параллелизма задаётся `GPUS` (число процессов torchrun); отдельных
+конфигов под каждое число GPU нет.
+
 ```bash
 docker compose build
 
-# 1 GPU
-docker compose run --rm train-1gpu
+# полный пайплайн на N GPU: train (3 стадии) -> eval+baselines -> Deep Trace
+GPUS=4 docker compose run --rm pipeline
 
-# 2 GPU (DDP)
-docker compose run --rm train-2gpu
+# только тренировка одной стадии
+GPUS=2 docker compose run --rm train
 
-# eval после обучения
-docker compose run --rm eval --config configs/qwen2_5_0_5b_4096f_v1_2gpu.yaml
+# eval (с контрольными бейзлайнами) и Deep Trace по готовому чекпоинту
+docker compose run --rm eval
+docker compose run --rm deep-trace
 ```
 
 ### Без Docker
@@ -50,60 +59,37 @@ pip install -r requirements.txt -c constraints.txt
 pip install -e .
 ```
 
-Запуск через единый лаунчер (сам выбирает python3 / torchrun):
+Единый лаунчер (сам выбирает python3 / torchrun по числу GPU):
 
 ```bash
 # 1 GPU
-bash scripts/run.sh --gpus 1 --config configs/qwen2_5_0_5b_4096f_v1.yaml
+bash scripts/run.sh --gpus 1 \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 
 # N GPU (DDP)
-bash scripts/run.sh --gpus 2 --config configs/qwen2_5_0_5b_4096f_v1_2gpu.yaml
-bash scripts/run.sh --gpus 4 --config configs/qwen2_5_0_5b_4096f_v1_4gpu.yaml
+bash scripts/run.sh --gpus 4 \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 
-# продолжить с чекпоинта (переопределяет training.init_from_checkpoint)
-bash scripts/run.sh --gpus 2 \
-  --config configs/qwen2_5_0_5b_4096f_v1_2gpu.yaml \
-  --continue-from outputs/4096f_v1_2gpu/clt_step_5000.pt
+# весь пайплайн на N GPU одной командой
+bash scripts/11_run_final_training_pipeline.sh --gpus 4 --backup-intermediate
 ```
 
 ---
 
-## Текущий эксперимент: 4096 фич
+## Пайплайн: 2048 фич, 3 стадии
 
-| Config | Режим | batch/GPU | seq_len | eff. batch | lr |
-|---|---|---|---|---|---|
-| `qwen2_5_0_5b_4096f_v1.yaml` | 1 GPU | 16 | 128 | 32 seq | 0.0002 |
-| `qwen2_5_0_5b_4096f_v1_2gpu.yaml` | 2 GPU DDP | 32 | 256 | 64 seq | 0.0003 |
-| `qwen2_5_0_5b_4096f_v1_4gpu.yaml` | 4 GPU DDP | — | — | — | — |
-| `qwen2_5_0_5b_4096f_v1_continue.yaml` | 1 GPU finetune | 16 | 128 | 32 seq | 0.00002 |
+| Стадия  | Config                                            | batch/GPU | lr    |
+|---------|---------------------------------------------------|-----------|-------|
+| stage 1 | `..._recon_fidelity_v2.yaml`                      | 16        | 2e-4  |
+| stage 2 | `..._recon_fidelity_v2_continue_v1.yaml`          | 16        | —     |
+| stage 3 | `..._recon_fidelity_v2_continue_v2.yaml`          | 16        | 5e-5  |
 
-Цепочка: stage 1 (30000 шагов с нуля) → stage 2 `*_continue` (5000 шагов,
-lr ×0.1, инициализация из `outputs/4096f_v1/clt_final.pt`).
+Батч в конфиге — **на один GPU**; эффективный батч = `batch_size_sequences × N`.
+При большом N масштабируйте lr под свой эффективный батч.
 
-> **Диск:** чекпоинт 4096f весит ~6–8 GB (декодеры 300 пар × 4096×896 + Adam
-> state). `save_every`/`keep_last_checkpoints` в конфигах подобраны так, чтобы
-> не переполнить диск — перед запуском проверьте `df -h`.
-
-### Полный цикл 4096f
-
-```bash
-# Stage 1
-bash scripts/run.sh --gpus 2 --config configs/qwen2_5_0_5b_4096f_v1_2gpu.yaml
-
-# Stage 2 (continuation)
-bash scripts/run.sh --gpus 1 --config configs/qwen2_5_0_5b_4096f_v1_continue.yaml
-
-# Replacement eval
-python3 scripts/02_eval_replacement_model.py \
-  --config configs/qwen2_5_0_5b_4096f_v1_continue.yaml
-
-# Deep Trace suite
-python3 scripts/09_build_deep_trace_prompt_suite.py \
-  --checkpoint outputs/4096f_v1_continue/clt_final.pt \
-  --output-dir outputs/4096f_v1_continue/deep_trace_suite \
-  --summary-output outputs/4096f_v1_continue/deep_trace_suite_summary.json \
-  --max-feature-nodes 64 --top-error-nodes 8 --causal-top-k 8
-```
+Каждая следующая стадия инициализируется из `clt_final.pt` предыдущей через
+`training.init_from_checkpoint`. Финальный чекпоинт:
+`outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt`.
 
 ---
 
@@ -118,6 +104,22 @@ python3 scripts/09_build_deep_trace_prompt_suite.py \
 | `last_token_kl_div` | ≤ 1.35 |
 | `target_logit_diff_mae` | ≤ 0.55 |
 
+Текущий результат финального чекпоинта:
+
+```text
+last_token_top1_agreement: 0.537
+kl_div:                    1.342
+last_token_kl_div:         1.284
+target_logit_diff_mae:     0.512
+```
+
+**Контрольные бейзлайны.** Eval считает те же метрики для контролей
+(`zero` / `mean` / `random_clt`) и кладёт таблицу `baseline_comparison` в JSON:
+обученный CLT должен быть заметно ближе к оригиналу, чем зануление MLP,
+mean-ablation и необученный CLT. Без этого разрыва абсолютные числа ничего не
+доказывают. Включается блоком `replacement_eval.baselines` в конфиге или
+флагом `--baselines all`.
+
 ### Deep Trace suite (`deep_trace_suite_summary.json`)
 
 | Метрика | Порог |
@@ -127,18 +129,7 @@ python3 scripts/09_build_deep_trace_prompt_suite.py \
 | median sign_match | = 1.00 |
 | mean MLP error norm | ≤ 7.00 |
 
-### Baseline для сравнения (2048 фич, предыдущее поколение)
-
-```text
-checkpoint: outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt
-last_token_top1_agreement: 0.537
-kl_div:                    1.342
-last_token_kl_div:         1.284
-target_logit_diff_mae:     0.512
-mean sign_match:           ~0.943
-```
-
-Эксперимент 4096f считается успешным, если превосходит эти значения.
+Текущий результат: mean sign_match ≈ 0.943, median = 1.00.
 
 ---
 
@@ -146,26 +137,23 @@ mean sign_match:           ~0.943
 
 ```text
 configs/
-  qwen2_5_0_5b_4096f_v1.yaml              # stage 1, 1 GPU
-  qwen2_5_0_5b_4096f_v1_2gpu.yaml         # stage 1, 2 GPU DDP
-  qwen2_5_0_5b_4096f_v1_4gpu.yaml         # stage 1, 4 GPU DDP
-  qwen2_5_0_5b_4096f_v1_continue.yaml     # stage 2 finetune
-  qwen2_5_0_5b_base_clt_recon_fidelity_v2*.yaml  # baseline 2048f (3 стадии)
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml            # stage 1
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml # stage 2
+  qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml # stage 3 (final)
 
 scripts/
   run.sh                          # единый лаунчер: 1 GPU / N-GPU DDP / resume
   01_train_clt.py                 # обучение CLT
-  02_eval_replacement_model.py    # replacement метрики + gate
+  02_eval_replacement_model.py    # replacement метрики + контрольные бейзлайны + gate
   09_build_deep_trace_prompt_suite.py  # каузальные Deep Trace графы
   10_backup_intermediate_outputs.sh    # перенос промежуточных outputs в _backup
-  11_run_final_training_pipeline.sh    # оркестратор baseline-пайплайна (2048f)
-  12_train_multigpu.sh            # multi-GPU лаунчер + авто-eval
+  11_run_final_training_pipeline.sh    # оркестратор всего пайплайна (--gpus N)
 
 src/qwen_clt/
   models/        # CrossLayerTranscoder, Qwen hooks, proxy replacement model
   training/      # train loop (DDP), losses, train-time метрики
   data/          # токенизация с кешем + DataLoader с DistributedSampler
-  replacement/   # LayerReplacementHook, replacement метрики, loader
+  replacement/   # LayerReplacementHook, baselines (zero/mean/random), метрики, loader
   attribution/   # целевые векторы, fidelity gate, валидация знаков
   deep_trace/    # построение графов, кеш активаций, сериализация, сводки
   interventions/ # FeatureIntervention (каузальные аблации фич)
@@ -184,13 +172,11 @@ Dockerfile, docker-compose.yml, DOCKER.md
 - CLT оборачивается в `DistributedDataParallel`; замороженный Qwen на каждом
   ранке работает как обычный inference без DDP
 - `DistributedSampler` делит датасет между ранками без пересечений
-- `max_train_tokens` в конфиге — **per-rank**: 2 GPU суммарно видят 2×
 - Логи, eval и чекпоинты пишет только rank 0
 - Backend NCCL по умолчанию; при проблемах совместимости NCCL/CUDA:
   `export DIST_BACKEND=gloo`
 - Возобновление: `--continue-from <ckpt>` в `run.sh` (передаётся через env
-  `CLT_OVERRIDE_INIT_CHECKPOINT`, загружаются только веса модели);
-  scheduler восстанавливается только при `training.restore_scheduler_state: true`
+  `CLT_OVERRIDE_INIT_CHECKPOINT`, загружаются веса модели)
 
 ---
 
@@ -201,7 +187,8 @@ PYTHONPATH=src python3 -m pytest tests/ -q
 ```
 
 Покрывают: формы тензоров CLT и нормализацию, replacement hook и метрики,
-fidelity gate, валидацию знаков аблаций, сериализацию Deep Trace графов.
+контрольные бейзлайны, fidelity gate, валидацию знаков аблаций, сериализацию
+Deep Trace графов.
 
 ---
 

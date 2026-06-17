@@ -180,13 +180,9 @@ class LayerReplacementHook:
             device=mlp_input.device,
             dtype=mlp_input.dtype,
         )
-        threshold = self.autoencoder.thresholds[src].to(
-            device=mlp_input.device,
-            dtype=mlp_input.dtype,
-        )
 
         pre = mlp_input @ encoder + bias
-        features = pre * (pre > threshold)
+        features = self.autoencoder.jump_relu(pre, src)
 
         return features
 

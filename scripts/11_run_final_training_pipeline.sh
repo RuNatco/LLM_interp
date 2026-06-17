@@ -8,6 +8,7 @@ RUN_BACKUP=0
 SKIP_TRAIN=0
 SKIP_DEEP_TRACE=0
 ALLOW_EXISTING=0
+GPUS=1
 
 usage() {
   cat <<'EOF'
@@ -15,6 +16,9 @@ Usage:
   bash scripts/11_run_final_training_pipeline.sh [options]
 
 Options:
+  --gpus N                Number of GPUs for training (default: 1).
+                          N=1 runs a single process; N>1 uses DDP via torchrun.
+                          Eval / Deep Trace always run on a single process.
   --backup-intermediate   Move intermediate output dirs to outputs/_backup after a successful run.
   --skip-train            Skip CLT training and run final eval / Deep Trace on existing checkpoint.
   --skip-deep-trace       Skip Deep Trace prompt suite.
@@ -29,6 +33,10 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --gpus)
+      GPUS="$2"
+      shift 2
+      ;;
     --backup-intermediate)
       RUN_BACKUP=1
       shift
@@ -60,6 +68,11 @@ done
 export PYTHONPATH="${PROJECT_ROOT}/src${PYTHONPATH:+:${PYTHONPATH}}"
 export HF_HOME="${HF_HOME:-${PROJECT_ROOT}/.cache/huggingface}"
 
+if ! [[ "${GPUS}" =~ ^[0-9]+$ ]] || [[ "${GPUS}" -lt 1 ]]; then
+  echo "Error: --gpus must be a positive integer (got: ${GPUS})." >&2
+  exit 2
+fi
+
 STAGE_OUTPUT_DIRS=(
   outputs/base_clt_recon_fidelity_v2
   outputs/base_clt_recon_fidelity_v2_continue_v1
@@ -87,16 +100,16 @@ if [[ "${SKIP_TRAIN}" -eq 0 && "${ALLOW_EXISTING}" -eq 0 ]]; then
 fi
 
 if [[ "${SKIP_TRAIN}" -eq 0 ]]; then
-  echo "Stage 1/3: train 2048-feature reconstruction baseline"
-  python3 scripts/01_train_clt.py \
+  echo "Stage 1/3: train 2048-feature reconstruction baseline (${GPUS} GPU)"
+  bash scripts/run.sh --gpus "${GPUS}" \
     --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2.yaml
 
-  echo "Stage 2/3: continue from reconstruction baseline"
-  python3 scripts/01_train_clt.py \
+  echo "Stage 2/3: continue from reconstruction baseline (${GPUS} GPU)"
+  bash scripts/run.sh --gpus "${GPUS}" \
     --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v1.yaml
 
-  echo "Stage 3/3: final low-LR continuation"
-  python3 scripts/01_train_clt.py \
+  echo "Stage 3/3: final low-LR continuation (${GPUS} GPU)"
+  bash scripts/run.sh --gpus "${GPUS}" \
     --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml
 fi
 

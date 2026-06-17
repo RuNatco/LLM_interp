@@ -25,8 +25,15 @@ clt:
   features_per_layer: 2048
   input_kind: mlp_normed_input
   nonlinearity: jumprelu
-  init_threshold: 0.0
   decoder_init_scale: 0.02
+  jumprelu:
+    init_threshold: 0.05
+    bandwidth: 0.05
+  normalization:
+    normalize_inputs: true
+    normalize_targets: false
+    momentum: 0.01
+    eps: 1.0e-5
 
 training:
   init_from_checkpoint: outputs/base_clt_recon_fidelity_v2_continue_v1/clt_final.pt

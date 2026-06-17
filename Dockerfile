@@ -34,16 +34,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 WORKDIR /workspace
 
 # ── Python deps ──────────────────────────────────────────────────────────────
-# torch is already provided by the base image — install only app deps.
+# torch is already provided by the base image (2.4.1, CUDA 12.1). requirements.txt
+# pins `torch>=2.1`, which is already satisfied, so pip will NOT reinstall torch
+# and the CUDA-matched build from the base image is preserved.
 COPY requirements.txt constraints.txt ./
-RUN pip install --no-cache-dir \
-        transformers==4.44.2 \
-        "datasets==2.20.0" \
-        "pyyaml>=6.0" \
-        "numpy>=1.26,<2" \
-        "tqdm>=4.66" \
-        "safetensors>=0.4" \
-        -c constraints.txt
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 # ── package install ──────────────────────────────────────────────────────────
 COPY pyproject.toml ./
