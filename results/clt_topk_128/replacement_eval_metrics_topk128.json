@@ -1,0 +1,230 @@
+{
+  "project": "qwen2_5_0_5b_clt_topk128",
+  "config_path": "configs/qwen2_5_0_5b_clt_topk128.yaml",
+  "model_name": "Qwen/Qwen2.5-0.5B",
+  "checkpoint_path": "outputs/clt_topk128/clt_final.pt",
+  "replacement": {
+    "read_from": "mlp_normed_input",
+    "replace_at": "mlp_output",
+    "replace_mode": "full",
+    "detach_reconstruction": false
+  },
+  "eval": {
+    "seq_len": 128,
+    "max_eval_tokens": 50000,
+    "batch_size_sequences": 128,
+    "num_eval_sequences": 518
+  },
+  "target_logit_diff": {
+    "positive": " increase",
+    "negative": " decrease",
+    "positive_token_id": 5263,
+    "negative_token_id": 18472,
+    "target_pos": -1,
+    "score": "logit(positive)-logit(negative)"
+  },
+  "clt": {
+    "n_layers": 24,
+    "d_model": 896,
+    "features_per_layer": 2048,
+    "input_kind": "mlp_normed_input",
+    "nonlinearity": "topk",
+    "normalization": {
+      "normalize_inputs": true,
+      "normalize_targets": false,
+      "momentum": 0.01,
+      "eps": 1e-05
+    }
+  },
+  "metrics": {
+    "kl_div": 3.4681251420385206,
+    "last_token_kl_div": 3.3448848061579994,
+    "last_token_logit_mse": 7.657497862591247,
+    "last_token_mean_abs_logit_diff": 2.096652940433458,
+    "last_token_top1_agreement": 0.22393822393822393,
+    "logit_mse": 9.55739047640846,
+    "mean_abs_logit_diff": 2.3721806835966044,
+    "num_sequences": 518,
+    "num_tokens": 33810,
+    "target_logit_diff_mae": 1.1672476985739926,
+    "target_logit_diff_mse": 2.3324427075367637,
+    "target_logit_diff_original_mean": 1.9139991662677192,
+    "target_logit_diff_replacement_mean": 2.66199119302757,
+    "top1_agreement": 0.26944691104072327
+  },
+  "batch_metrics": [
+    {
+      "num_tokens": 8440,
+      "num_sequences": 128,
+      "kl_div": 3.562401294708252,
+      "logit_mse": 10.318501472473145,
+      "top1_agreement": 0.2780805826187134,
+      "mean_abs_logit_diff": 2.4811670780181885,
+      "last_token_kl_div": 3.481309175491333,
+      "last_token_logit_mse": 7.898242950439453,
+      "last_token_top1_agreement": 0.265625,
+      "last_token_mean_abs_logit_diff": 2.139979600906372,
+      "target_logit_diff_original_mean": 1.8886128664016724,
+      "target_logit_diff_replacement_mean": 2.7548561096191406,
+      "target_logit_diff_mae": 1.2656804323196411,
+      "target_logit_diff_mse": 2.3435652256011963
+    },
+    {
+      "num_tokens": 5716,
+      "num_sequences": 128,
+      "kl_div": 3.375884532928467,
+      "logit_mse": 9.339688301086426,
+      "top1_agreement": 0.26731979846954346,
+      "mean_abs_logit_diff": 2.326939821243286,
+      "last_token_kl_div": 2.7450828552246094,
+      "last_token_logit_mse": 6.657098293304443,
+      "last_token_top1_agreement": 0.1328125,
+      "last_token_mean_abs_logit_diff": 1.9334056377410889,
+      "target_logit_diff_original_mean": 2.1049880981445312,
+      "target_logit_diff_replacement_mean": 2.6229324340820312,
+      "target_logit_diff_mae": 0.9730453491210938,
+      "target_logit_diff_mse": 1.7196695804595947
+    },
+    {
+      "num_tokens": 8037,
+      "num_sequences": 128,
+      "kl_div": 3.5701589584350586,
+      "logit_mse": 9.61146068572998,
+      "top1_agreement": 0.25183525681495667,
+      "mean_abs_logit_diff": 2.382655143737793,
+      "last_token_kl_div": 3.607600688934326,
+      "last_token_logit_mse": 7.345596790313721,
+      "last_token_top1_agreement": 0.1875,
+      "last_token_mean_abs_logit_diff": 2.076254367828369,
+      "target_logit_diff_original_mean": 1.799784541130066,
+      "target_logit_diff_replacement_mean": 2.6148300170898438,
+      "target_logit_diff_mae": 1.176817774772644,
+      "target_logit_diff_mse": 2.5744669437408447
+    },
+    {
+      "num_tokens": 10973,
+      "num_sequences": 128,
+      "kl_div": 3.3802480697631836,
+      "logit_mse": 9.034476280212402,
+      "top1_agreement": 0.2785017788410187,
+      "mean_abs_logit_diff": 2.3041937351226807,
+      "last_token_kl_div": 3.518141746520996,
+      "last_token_logit_mse": 8.460405349731445,
+      "last_token_top1_agreement": 0.3203125,
+      "last_token_mean_abs_logit_diff": 2.2076704502105713,
+      "target_logit_diff_original_mean": 1.8459761142730713,
+      "target_logit_diff_replacement_mean": 2.6460022926330566,
+      "target_logit_diff_mae": 1.262934923171997,
+      "target_logit_diff_mse": 2.738851547241211
+    },
+    {
+      "num_tokens": 644,
+      "num_sequences": 6,
+      "kl_div": 3.2752461433410645,
+      "logit_mse": 9.74991226196289,
+      "top1_agreement": 0.24068322777748108,
+      "mean_abs_logit_diff": 2.3730955123901367,
+      "last_token_kl_div": 3.9295196533203125,
+      "last_token_logit_mse": 13.388656616210938,
+      "last_token_top1_agreement": 0.0,
+      "last_token_mean_abs_logit_diff": 2.7217559814453125,
+      "target_logit_diff_original_mean": 2.2688801288604736,
+      "target_logit_diff_replacement_mean": 2.861328125,
+      "target_logit_diff_mae": 0.96484375,
+      "target_logit_diff_mse": 1.3344167470932007
+    }
+  ],
+  "baselines": {
+    "zero": {
+      "kl_div": 10.35976111111081,
+      "last_token_kl_div": 9.338401194244739,
+      "last_token_logit_mse": 16.832738375571704,
+      "last_token_mean_abs_logit_diff": 3.222558184480115,
+      "last_token_top1_agreement": 0.007722007722007722,
+      "logit_mse": 17.724179425503298,
+      "mean_abs_logit_diff": 3.30601550131569,
+      "num_sequences": 518,
+      "num_tokens": 33810,
+      "target_logit_diff_mae": 1.4918517481866491,
+      "target_logit_diff_mse": 3.966773693165724,
+      "target_logit_diff_original_mean": 1.9139991662677192,
+      "target_logit_diff_replacement_mean": 0.9308601291023166,
+      "top1_agreement": 0.003963324421200283
+    },
+    "mean": {
+      "kl_div": 6.22660020212209,
+      "last_token_kl_div": 5.835520753529081,
+      "last_token_logit_mse": 9.263114205658667,
+      "last_token_mean_abs_logit_diff": 2.3893861650960324,
+      "last_token_top1_agreement": 0.003861003861003861,
+      "logit_mse": 9.99992238320884,
+      "mean_abs_logit_diff": 2.4731696840575093,
+      "num_sequences": 518,
+      "num_tokens": 33810,
+      "target_logit_diff_mae": 2.021308280326225,
+      "target_logit_diff_mse": 5.102117885493864,
+      "target_logit_diff_original_mean": 1.9139991662677192,
+      "target_logit_diff_replacement_mean": 3.9146488136306234,
+      "top1_agreement": 0.016918071638104108
+    },
+    "random_clt": {
+      "kl_div": 13.00544192659118,
+      "last_token_kl_div": 12.196701502707935,
+      "last_token_logit_mse": 20.149094887221644,
+      "last_token_mean_abs_logit_diff": 3.6192226511170964,
+      "last_token_top1_agreement": 0.0,
+      "logit_mse": 21.726135128724156,
+      "mean_abs_logit_diff": 3.7358376067124044,
+      "num_sequences": 518,
+      "num_tokens": 33810,
+      "target_logit_diff_mae": 1.4811953103680409,
+      "target_logit_diff_mse": 3.481639231033767,
+      "target_logit_diff_original_mean": 1.9139991662677192,
+      "target_logit_diff_replacement_mean": 0.8459020931288083,
+      "top1_agreement": 0.0
+    }
+  },
+  "baseline_comparison": {
+    "metrics_table": {
+      "clt": {
+        "kl_div": 3.4681251420385206,
+        "last_token_kl_div": 3.3448848061579994,
+        "top1_agreement": 0.26944691104072327,
+        "last_token_top1_agreement": 0.22393822393822393
+      },
+      "zero": {
+        "kl_div": 10.35976111111081,
+        "last_token_kl_div": 9.338401194244739,
+        "top1_agreement": 0.003963324421200283,
+        "last_token_top1_agreement": 0.007722007722007722
+      },
+      "mean": {
+        "kl_div": 6.22660020212209,
+        "last_token_kl_div": 5.835520753529081,
+        "top1_agreement": 0.016918071638104108,
+        "last_token_top1_agreement": 0.003861003861003861
+      },
+      "random_clt": {
+        "kl_div": 13.00544192659118,
+        "last_token_kl_div": 12.196701502707935,
+        "top1_agreement": 0.0,
+        "last_token_top1_agreement": 0.0
+      }
+    },
+    "recovered_fraction": {
+      "zero": {
+        "recovered_fraction_kl_div": 0.6652311665450502,
+        "recovered_fraction_last_token_kl_div": 0.6418139747284093
+      },
+      "mean": {
+        "recovered_fraction_kl_div": 0.44301464210653074,
+        "recovered_fraction_last_token_kl_div": 0.4268061159520079
+      },
+      "random_clt": {
+        "recovered_fraction_kl_div": 0.7333327724183272,
+        "recovered_fraction_last_token_kl_div": 0.7257549669953502
+      }
+    },
+    "note": "recovered_fraction[k] = 1 - KL(CLT)/KL(baseline_k); 1.0 = CLT recovers the full gap the baseline left, 0.0 = CLT no better than that control."
+  }
+}
