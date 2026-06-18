@@ -126,6 +126,11 @@ if [[ "${SKIP_DEEP_TRACE}" -eq 0 ]]; then
     --max-feature-nodes 64 \
     --top-error-nodes 8 \
     --causal-top-k 8
+
+  echo "Render Deep Trace graphs"
+  python3 scripts/12_visualize_deep_trace_graph.py \
+    outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/*.json \
+    || echo "Graph rendering skipped (matplotlib missing or no graphs)"
 fi
 
 if [[ "${RUN_BACKUP}" -eq 1 ]]; then
@@ -140,3 +145,5 @@ echo "Final metrics:"
 echo "  outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json"
 echo "Final Deep Trace summary:"
 echo "  outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json"
+echo "Deep Trace graph images:"
+echo "  outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/*.svg"

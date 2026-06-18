@@ -9,6 +9,8 @@ from qwen_clt.models.cross_layer_transcoder import (
     CrossLayerTranscoder,
     clt_normalization_kwargs,
     clt_jumprelu_kwargs,
+    clt_nonlinearity,
+    clt_topk_kwargs,
 )
 
 
@@ -85,6 +87,8 @@ def build_clt_from_checkpoint_cfg(
         d_model=int(clt_cfg["d_model"]),
         features_per_layer=int(clt_cfg["features_per_layer"]),
         **clt_jumprelu_kwargs(clt_cfg),
+        nonlinearity=clt_nonlinearity(clt_cfg),
+        **clt_topk_kwargs(clt_cfg),
         decoder_init_scale=float(clt_cfg.get("decoder_init_scale", 0.02)),
         **clt_normalization_kwargs(clt_cfg),
     )

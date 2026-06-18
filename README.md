@@ -93,6 +93,44 @@ bash scripts/11_run_final_training_pipeline.sh --gpus 4 --backup-intermediate
 
 ---
 
+## Эксперимент: 4096 фич (capacity)
+
+Одиночный конфиг `..._recon_fidelity_4096.yaml` — capacity-эксперимент: словарь удвоен
+(4096 фич/слой) ради трудных слоёв (1, 4 и плотный хвост 22–23). Один прогон со
+встроенным расписанием lr (warmup 500 → косинус 2e-4 → 2e-5, 20000 шагов) заменяет
+трёхстадийную схему 2048.
+
+| Параметр            | 2048        | 4096        |
+|---------------------|-------------|-------------|
+| features/слой       | 2048        | 4096        |
+| параметры CLT       | ~0.59B      | ~1.19B      |
+| память обучения/GPU | ~12 ГБ      | ~22 ГБ      |
+| чекпоинт            | ~2.4 ГБ     | ~4.8 ГБ     |
+| стоимость шага      | 1×          | ~2×         |
+
+Рекомендуется A100 (на A100 — `dtype: bfloat16`; на V100 — `float16`, и заметно
+медленнее). При OOM — `batch_size_sequences: 8`.
+
+```bash
+# обучение (через run.sh, НЕ через scripts/11)
+PYTHONPATH=src bash scripts/run.sh --gpus N \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_4096.yaml
+
+# eval с контролями
+PYTHONPATH=src python scripts/02_eval_replacement_model.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_4096.yaml --baselines all
+
+# сравнение 2048 vs 4096 бок о бок
+python scripts/14_compare_replacement_eval.py \
+  outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json \
+  outputs/base_clt_recon_fidelity_4096/replacement_eval_metrics.json
+```
+
+Решение «оправдан ли больший словарь» — по `scripts/14`: затянулись ли трудные слои
+(per-layer NMSE) и обошёл ли 4096 нынешние top1 0.47 / KL 1.21 / recovered 0.81.
+
+---
+
 ## Контроль качества (gates)
 
 ### Replacement eval (`replacement_eval_metrics.json`)

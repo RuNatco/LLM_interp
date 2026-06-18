@@ -1,6 +1,6 @@
 project:
-  name: qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2
-  output_dir: outputs/base_clt_recon_fidelity_v2_continue_v2
+  name: qwen2_5_0_5b_base_clt_recon_fidelity_4096
+  output_dir: outputs/base_clt_recon_fidelity_4096
 
 model:
   name: Qwen/Qwen2.5-0.5B
@@ -22,7 +22,7 @@ data:
 clt:
   n_layers: 24
   d_model: 896
-  features_per_layer: 2048
+  features_per_layer: 4096
   input_kind: mlp_normed_input
   nonlinearity: jumprelu
   decoder_init_scale: 0.02
@@ -36,24 +36,27 @@ clt:
     eps: 1.0e-5
 
 training:
-  init_from_checkpoint: outputs/base_clt_recon_fidelity_v2_continue_v1/clt_final.pt
   batch_size_sequences: 16
   gradient_accumulation_steps: 1
-  lr: 0.00005
+  lr: 0.0002
   weight_decay: 0.0
   lambda_sparsity: 0.00001
   sparsity_c: 1.0
-  max_optimizer_steps: 3000
+  max_optimizer_steps: 20000
+  lr_scheduler:
+    enabled: true
+    warmup_steps: 500
+    min_lr_ratio: 0.1
   log_every: 25
   eval_every: 500
-  save_every: 1000
+  save_every: 2000
   keep_last_checkpoints: 3
   grad_clip_norm: 1.0
-  seed: 44
+  seed: 42
 
 replacement:
   enabled: true
-  checkpoint_path: outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt
+  checkpoint_path: outputs/base_clt_recon_fidelity_4096/clt_final.pt
   read_from: mlp_normed_input
   replace_at: mlp_output
   replace_mode: full
@@ -63,7 +66,7 @@ replacement_eval:
   enabled: true
   max_eval_tokens: 50000
   batch_size_sequences: 128
-  output_path: outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
+  output_path: outputs/base_clt_recon_fidelity_4096/replacement_eval_metrics.json
   metrics:
     - kl_div
     - logit_mse

@@ -1,7 +1,6 @@
 project:
-  name: qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2
-  output_dir: outputs/base_clt_recon_fidelity_v2_continue_v2
-
+  name: qwen2_5_0_5b_clt_batchtopk64
+  output_dir: outputs/clt_batchtopk64
 model:
   name: Qwen/Qwen2.5-0.5B
   dtype: bfloat16
@@ -9,7 +8,6 @@ model:
   trust_remote_code: true
   use_cache: false
   chat_template: false
-
 data:
   dataset_name: wikitext
   dataset_config: wikitext-103-raw-v1
@@ -18,62 +16,60 @@ data:
   seq_len: 128
   max_train_tokens: 50000000
   max_eval_tokens: 50000
-
 clt:
   n_layers: 24
   d_model: 896
   features_per_layer: 2048
   input_kind: mlp_normed_input
-  nonlinearity: jumprelu
+  nonlinearity: batchtopk
   decoder_init_scale: 0.02
-  jumprelu:
-    init_threshold: 0.05
-    bandwidth: 0.05
   normalization:
     normalize_inputs: true
     normalize_targets: false
     momentum: 0.01
-    eps: 1.0e-5
-
+    eps: 1.0e-05
+  topk:
+    k: 64
 training:
-  init_from_checkpoint: outputs/base_clt_recon_fidelity_v2_continue_v1/clt_final.pt
   batch_size_sequences: 16
   gradient_accumulation_steps: 1
-  lr: 0.00005
+  lr: 0.0002
   weight_decay: 0.0
-  lambda_sparsity: 0.00001
+  lambda_sparsity: 0.0
   sparsity_c: 1.0
-  max_optimizer_steps: 3000
+  max_optimizer_steps: 10000
   log_every: 25
   eval_every: 500
-  save_every: 1000
+  save_every: 5000
   keep_last_checkpoints: 3
   grad_clip_norm: 1.0
-  seed: 44
-
+  seed: 42
+  lr_scheduler:
+    enabled: true
+    warmup_steps: 500
+    min_lr_ratio: 0.1
 replacement:
   enabled: true
-  checkpoint_path: outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt
+  checkpoint_path: outputs/clt_batchtopk64/clt_final.pt
   read_from: mlp_normed_input
   replace_at: mlp_output
   replace_mode: full
   detach_reconstruction: false
-
 replacement_eval:
   enabled: true
   max_eval_tokens: 50000
   batch_size_sequences: 128
-  output_path: outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
+  output_path: outputs/clt_batchtopk64/replacement_eval_metrics.json
   metrics:
-    - kl_div
-    - logit_mse
-    - top1_agreement
-    - mean_abs_logit_diff
-    - last_token_kl_div
-    - last_token_top1_agreement
+  - kl_div
+  - logit_mse
+  - top1_agreement
+  - mean_abs_logit_diff
+  - last_token_kl_div
+  - last_token_top1_agreement
   target_logit_diff:
-    positive: " increase"
-    negative: " decrease"
+    positive: ' increase'
+    negative: ' decrease'
     target_pos: -1
   diagnostics:
     enabled: false
@@ -86,6 +82,6 @@ replacement_eval:
   baselines:
     enabled: true
     kinds:
-      - zero
-      - mean
-      - random_clt
+    - zero
+    - mean
+    - random_clt

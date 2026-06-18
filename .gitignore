@@ -1,19 +1,20 @@
-__pycache__/
-*.py[cod]
-*$py.class
-.DS_Store
+*-key.json
+key.json
+*.pem
+.env
 
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-*.log
 
-.venv/
-venv/
 
-# Heavy experiment artifacts belong in external/cloud artifact storage.
 outputs/
 *.pt
-*.pth
-*.safetensors
+*.ckpt
+cache-*.arrow
+*.arrow
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.venv/
+venv/

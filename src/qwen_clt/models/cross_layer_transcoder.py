@@ -34,6 +34,15 @@ def clt_jumprelu_kwargs(clt_cfg: dict) -> dict:
     }
 
 
+def clt_nonlinearity(clt_cfg: dict) -> str:
+    return str(clt_cfg.get("nonlinearity", "jumprelu")).lower()
+
+
+def clt_topk_kwargs(clt_cfg: dict) -> dict:
+    topk_cfg = clt_cfg.get("topk", {}) or {}
+    return {"topk_k": int(topk_cfg.get("k", clt_cfg.get("topk_k", 32)))}
+
+
 class _JumpReLU(torch.autograd.Function):
 
     @staticmethod
@@ -72,6 +81,8 @@ class CrossLayerTranscoder(nn.Module):
         init_threshold: float = 0.05,
         jumprelu_bandwidth: float = 0.05,
         decoder_init_scale: float = 0.02,
+        nonlinearity: str = "jumprelu",
+        topk_k: int = 32,
         normalize_inputs: bool = False,
         normalize_targets: bool = False,
         normalization_eps: float = 1e-5,
@@ -135,6 +146,15 @@ class CrossLayerTranscoder(nn.Module):
             )
         )
         self.decoder_init_scale = float(decoder_init_scale)
+
+        self.nonlinearity = str(nonlinearity).lower()
+        self.topk_k = int(topk_k)
+        if self.nonlinearity not in ("jumprelu", "topk", "batchtopk"):
+            raise ValueError(f"unknown nonlinearity {self.nonlinearity!r}")
+        if self.nonlinearity in ("topk", "batchtopk") and not 1 <= self.topk_k <= self.features_per_layer:
+            raise ValueError(f"topk_k must be in [1, {self.features_per_layer}], got {self.topk_k}")
+        if self.nonlinearity == "batchtopk":
+            self.register_buffer("batchtopk_threshold", torch.zeros(self.n_layers), persistent=True)
 
         if self.normalize_inputs:
             self.register_buffer(
@@ -278,10 +298,35 @@ class CrossLayerTranscoder(nn.Module):
         threshold = self.effective_threshold(layer_idx).to(z.dtype)
         return _JumpReLU.apply(z, threshold, self.jumprelu_bandwidth)
 
+    def _topk(self, z: torch.Tensor) -> torch.Tensor:
+        if self.topk_k >= z.shape[-1]:
+            return torch.relu(z)
+        vals, idx = torch.topk(z, self.topk_k, dim=-1)
+        return torch.zeros_like(z).scatter(-1, idx, torch.relu(vals))
+
+    def _batchtopk(self, z: torch.Tensor, layer_idx: int) -> torch.Tensor:
+        relu_z = torch.relu(z)
+        if self.training:
+            flat = relu_z.reshape(-1)
+            total = min(self.topk_k * (relu_z.numel() // relu_z.shape[-1]), flat.numel())
+            thr = flat.min().detach() if total >= flat.numel() else torch.topk(flat, total).values.min().detach()
+            with torch.no_grad():
+                self.batchtopk_threshold[layer_idx].mul_(0.99).add_(0.01 * thr)
+        else:
+            thr = self.batchtopk_threshold[layer_idx].to(relu_z.dtype)
+        return relu_z * (relu_z >= thr).to(relu_z.dtype)
+
+    def _activate(self, z: torch.Tensor, layer_idx: int) -> torch.Tensor:
+        if self.nonlinearity == "topk":
+            return self._topk(z)
+        if self.nonlinearity == "batchtopk":
+            return self._batchtopk(z, layer_idx)
+        return self.jump_relu(z, layer_idx)
+
     def encode_layer(self, x: torch.Tensor, layer_idx: int) -> torch.Tensor:
         x = self.normalize_input(x, layer_idx)
         z = x @ self.encoders[layer_idx].to(x.dtype) + self.encoder_bias[layer_idx].to(x.dtype)
-        return self.jump_relu(z, layer_idx)
+        return self._activate(z, layer_idx)
 
     def forward(
         self,
