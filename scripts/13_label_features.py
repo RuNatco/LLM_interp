@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SUPERSEDED by scripts/13b_label_features_by_effect.py
+# Activation-based labels; can diverge from a feature's causal output effect (thesis 3.5). Kept for record.
 from __future__ import annotations
 
 import argparse

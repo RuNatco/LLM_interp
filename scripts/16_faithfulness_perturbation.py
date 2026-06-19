@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SUPERSEDED by scripts/17_feature_faithfulness.py
+# Input-position perturbation; degenerate for single-position deep-trace graphs (thesis 3.4.8). Kept for record.
 from __future__ import annotations
 
 import argparse
