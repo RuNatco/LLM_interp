@@ -1,0 +1,3296 @@
+{
+  "kind": "deep_trace_stage2_prompt_suite",
+  "checkpoint": "outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt",
+  "positive": " rise",
+  "negative": " fall",
+  "target_pos": -1,
+  "replacement_fidelity": {
+    "available": true,
+    "metrics_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json",
+    "passed": true,
+    "thresholds": {
+      "min_last_token_top1": 0.3,
+      "max_target_logit_diff_mae": 2.0
+    },
+    "metrics": {
+      "top1_agreement": 0.47370600554319714,
+      "last_token_top1_agreement": 0.3764478766780102,
+      "kl_div": 1.2110955442489515,
+      "last_token_kl_div": 1.168020386493344,
+      "mean_abs_logit_diff": 1.320374267713377,
+      "last_token_mean_abs_logit_diff": 1.2890892737620585,
+      "target_logit_diff_mae": 0.5712234909470016
+    },
+    "warnings": []
+  },
+  "num_prompts": 27,
+  "results": [
+    {
+      "idx": 1,
+      "prompt": "Demand rises sharply while supply stays flat, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/01_demand_rises_sharply_while_supply_stays_flat_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 915,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.386337757110596,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 11.210288047790527,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.7654321193695068
+          }
+        },
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 19.356889724731445,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6217948794364929
+          }
+        },
+        {
+          "id": "mlp_error:L23:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P11",
+          "layer": 23,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 22.60688591003418,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.5150166153907776
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "target:0",
+          "score": 0.625,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1975",
+          "target": "target:0",
+          "score": 0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1298",
+          "target": "target:0",
+          "score": 0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.25891628861427307,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.8683719635009766
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.23824571073055267,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.3414089679718018
+          }
+        },
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "residual:L23:P11",
+          "score": 0.23613741993904114,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.8924405574798584
+          }
+        }
+      ]
+    },
+    {
+      "idx": 2,
+      "prompt": "Demand is greater than generation, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/02_demand_is_greater_than_generation_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 902,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.0761542320251465,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P9",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P9",
+          "layer": 20,
+          "pos": 9,
+          "feature_idx": null,
+          "value": 11.62732982635498,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.712609052658081
+          }
+        },
+        {
+          "id": "mlp_error:L22:P9",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P9",
+          "layer": 22,
+          "pos": 9,
+          "feature_idx": null,
+          "value": 18.652130126953125,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6959863901138306
+          }
+        },
+        {
+          "id": "mlp_error:L23:P9",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P9",
+          "layer": 23,
+          "pos": 9,
+          "feature_idx": null,
+          "value": 19.752805709838867,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.4377247095108032
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P9:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P9:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P9:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P9:F1445",
+          "target": "residual:L22:P9",
+          "score": -0.21720948815345764,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.062204122543335
+          }
+        },
+        {
+          "source": "feature:L20:P9:F1445",
+          "target": "residual:L21:P9",
+          "score": -0.20312908291816711,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.517896890640259
+          }
+        },
+        {
+          "source": "feature:L20:P9:F1445",
+          "target": "residual:L23:P9",
+          "score": -0.19633135199546814,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.294886827468872
+          }
+        }
+      ]
+    },
+    {
+      "idx": 3,
+      "prompt": "A drought destroys much of the harvest, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/03_a_drought_destroys_much_of_the_harvest_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 912,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.192534923553467,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 17.564044952392578,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.7578997015953064
+          }
+        },
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 12.688176155090332,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.613007664680481
+          }
+        },
+        {
+          "id": "mlp_error:L19:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P11",
+          "layer": 19,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 8.782669067382812,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3662980794906616
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "target:0",
+          "score": 0.625,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1298",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "residual:L21:P11",
+          "score": 0.2541009187698364,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.5195236206054688
+          }
+        },
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "residual:L23:P11",
+          "score": 0.25028878450393677,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.0299181938171387
+          }
+        },
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "residual:L22:P11",
+          "score": 0.2316148579120636,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.858811616897583
+          }
+        }
+      ]
+    },
+    {
+      "idx": 4,
+      "prompt": "A product becomes scarce while buyers still need it, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/04_a_product_becomes_scarce_while_buyers_still_need_it_so_the_price_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 920,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.673211574554443,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P13",
+          "layer": 22,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 20.39630126953125,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.883893609046936
+          }
+        },
+        {
+          "id": "mlp_error:L20:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P13",
+          "layer": 20,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 13.62786865234375,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.7126076817512512
+          }
+        },
+        {
+          "id": "mlp_error:L19:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P13",
+          "layer": 19,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 9.776946067810059,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3763410151004791
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P13:F601",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F541",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L22:P13",
+          "score": -0.22149960696697235,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.1356148719787598
+          }
+        },
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "residual:L22:P13",
+          "score": -0.22055324912071228,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.5211362838745117
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L21:P13",
+          "score": -0.20984074473381042,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.592363119125366
+          }
+        }
+      ]
+    },
+    {
+      "idx": 5,
+      "prompt": "Fuel supply is cut while demand keeps growing, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/05_fuel_supply_is_cut_while_demand_keeps_growing_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 915,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.126575469970703,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P12",
+          "layer": 22,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 18.033267974853516,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.7198464274406433
+          }
+        },
+        {
+          "id": "mlp_error:L20:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P12",
+          "layer": 20,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 12.049936294555664,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.6914275884628296
+          }
+        },
+        {
+          "id": "mlp_error:L19:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P12",
+          "layer": 19,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 9.068852424621582,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3285728991031647
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P12:F33",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P12:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L22:P12",
+          "score": -0.2844100594520569,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.947486639022827
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L21:P12",
+          "score": -0.2677656412124634,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.2785236835479736
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L23:P12",
+          "score": -0.26186585426330566,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 4.210820198059082
+          }
+        }
+      ]
+    },
+    {
+      "idx": 6,
+      "prompt": "Buyers rush to stockpile a limited good, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/06_buyers_rush_to_stockpile_a_limited_good_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 917,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 7.284763336181641,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P13",
+          "layer": 20,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 16.180639266967773,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 1.2269248962402344
+          }
+        },
+        {
+          "id": "mlp_error:L22:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P13",
+          "layer": 22,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 21.589075088500977,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.8873391151428223
+          }
+        },
+        {
+          "id": "mlp_error:L19:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P13",
+          "layer": 19,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 10.613036155700684,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.42239910364151
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P13:F33",
+          "target": "target:0",
+          "score": 0.3125,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P13:F601",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "residual:L22:P13",
+          "score": -0.17108212411403656,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.737304210662842
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L21:P13",
+          "score": -0.16324523091316223,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.007361888885498
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L22:P13",
+          "score": -0.16309431195259094,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.429215431213379
+          }
+        }
+      ]
+    },
+    {
+      "idx": 7,
+      "prompt": "Shortages spread across the market, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/07_shortages_spread_across_the_market_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 922,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.270904541015625,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 17.22612953186035,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.7995045185089111
+          }
+        },
+        {
+          "id": "mlp_error:L19:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P10",
+          "layer": 19,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 9.566643714904785,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.37588584423065186
+          }
+        },
+        {
+          "id": "mlp_error:L23:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P10",
+          "layer": 23,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 21.65471839904785,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.3574792444705963
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F1626",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "residual:L22:P10",
+          "score": -0.24152536690235138,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.6488866806030273
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.2246071994304657,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.047006845474243
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.20327289402484894,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.2878811359405518
+          }
+        }
+      ]
+    },
+    {
+      "idx": 8,
+      "prompt": "Production halts but orders keep coming, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/08_production_halts_but_orders_keep_coming_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 914,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.470762252807617,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 14.720956802368164,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.5037164688110352
+          }
+        },
+        {
+          "id": "mlp_error:L19:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P11",
+          "layer": 19,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 9.534696578979492,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.37314745783805847
+          }
+        },
+        {
+          "id": "mlp_error:L16:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L16 P11",
+          "layer": 16,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 5.8427734375,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.16242170333862305
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "target:0",
+          "score": -0.3125,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.3125,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.18799032270908356,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.703495502471924
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.18469268083572388,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.9347081184387207
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L23:P11",
+          "score": -0.18360885977745056,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.9980268478393555
+          }
+        }
+      ]
+    },
+    {
+      "idx": 9,
+      "prompt": "A new tariff raises import costs, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/09_a_new_tariff_raises_import_costs_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 913,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.15092658996582,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 18.09706687927246,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6360724568367004
+          }
+        },
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 11.980745315551758,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.5369579792022705
+          }
+        },
+        {
+          "id": "mlp_error:L21:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L21 P10",
+          "layer": 21,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 15.442391395568848,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.43179023265838623
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F541",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.2600390911102295,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.8634963035583496
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L21:P10",
+          "score": -0.25990617275238037,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.2046027183532715
+          }
+        },
+        {
+          "source": "feature:L20:P10:F541",
+          "target": "residual:L23:P10",
+          "score": -0.2401411235332489,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.5709712505340576
+          }
+        }
+      ]
+    },
+    {
+      "idx": 10,
+      "prompt": "Demand doubles overnight while stock is fixed, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/10_demand_doubles_overnight_while_stock_is_fixed_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 919,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 5.835512638092041,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 10.414411544799805,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.47771158814430237
+          }
+        },
+        {
+          "id": "mlp_error:L23:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P11",
+          "layer": 23,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 19.734325408935547,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.3923828601837158
+          }
+        },
+        {
+          "id": "mlp_error:L21:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L21 P11",
+          "layer": 21,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 13.200928688049316,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.37009572982788086
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P11:F1975",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L7:P11:F638",
+          "target": "target:0",
+          "score": 0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.21076570451259613,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.363234758377075
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.19414015114307404,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.925436496734619
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.18978968262672424,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.385042667388916
+          }
+        }
+      ]
+    },
+    {
+      "idx": 11,
+      "prompt": "Supply chains break down during peak demand, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/11_supply_chains_break_down_during_peak_demand_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 921,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 5.969537258148193,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 11.315496444702148,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.4830768406391144
+          }
+        },
+        {
+          "id": "mlp_error:L23:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P11",
+          "layer": 23,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 21.88363265991211,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.4058937132358551
+          }
+        },
+        {
+          "id": "mlp_error:L19:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P11",
+          "layer": 19,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 8.305816650390625,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.30085188150405884
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1975",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.23654083907604218,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.3871495723724365
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.22664758563041687,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.771167278289795
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.2217485010623932,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.4949564933776855
+          }
+        }
+      ]
+    },
+    {
+      "idx": 12,
+      "prompt": "Inventory runs low as customers keep buying, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/12_inventory_runs_low_as_customers_keep_buying_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 919,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.186734676361084,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 13.357515335083008,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.6709008812904358
+          }
+        },
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 18.001649856567383,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6673949956893921
+          }
+        },
+        {
+          "id": "mlp_error:L19:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P11",
+          "layer": 19,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 8.79309368133545,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3583027422428131
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L22:P11:F393",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L7:P11:F638",
+          "target": "target:0",
+          "score": 0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.2308879792690277,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.222238779067993
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.2136554718017578,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.6348371505737305
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L23:P11",
+          "score": -0.21123698353767395,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.457202672958374
+          }
+        }
+      ]
+    },
+    {
+      "idx": 13,
+      "prompt": "A bumper harvest floods the market with grain, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/13_a_bumper_harvest_floods_the_market_with_grain_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 911,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 7.064931869506836,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P12",
+          "layer": 22,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 21.576128005981445,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.962051272392273
+          }
+        },
+        {
+          "id": "mlp_error:L20:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P12",
+          "layer": 20,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 15.873003005981445,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.487460732460022
+          }
+        },
+        {
+          "id": "mlp_error:L19:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P12",
+          "layer": 19,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 11.14784049987793,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.33545005321502686
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P12:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P12:F601",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L22:P12",
+          "score": -0.22598114609718323,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.13714337348938
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L23:P12",
+          "score": -0.21735230088233948,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.351536273956299
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L21:P12",
+          "score": -0.21027225255966187,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.575453519821167
+          }
+        }
+      ]
+    },
+    {
+      "idx": 14,
+      "prompt": "Generation exceeds demand, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/14_generation_exceeds_demand_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 917,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.308525562286377,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P7",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P7",
+          "layer": 22,
+          "pos": 7,
+          "feature_idx": null,
+          "value": 19.05986976623535,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.8989272117614746
+          }
+        },
+        {
+          "id": "mlp_error:L20:P7",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P7",
+          "layer": 20,
+          "pos": 7,
+          "feature_idx": null,
+          "value": 12.748299598693848,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.7721832394599915
+          }
+        },
+        {
+          "id": "mlp_error:L19:P7",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P7",
+          "layer": 19,
+          "pos": 7,
+          "feature_idx": null,
+          "value": 9.058189392089844,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.4372113347053528
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P7:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P7:F33",
+          "target": "target:0",
+          "score": 0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P7:F601",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P7:F1445",
+          "target": "residual:L22:P7",
+          "score": -0.23686909675598145,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.47287654876709
+          }
+        },
+        {
+          "source": "feature:L20:P7:F1445",
+          "target": "residual:L21:P7",
+          "score": -0.23189286887645721,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.8631954193115234
+          }
+        },
+        {
+          "source": "feature:L20:P7:F1445",
+          "target": "residual:L23:P7",
+          "score": -0.22951361536979675,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.7547554969787598
+          }
+        }
+      ]
+    },
+    {
+      "idx": 15,
+      "prompt": "Supply is far greater than demand, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/15_supply_is_far_greater_than_demand_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 921,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.5535101890563965,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 21.23992156982422,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6913777589797974
+          }
+        },
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 12.181252479553223,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.648388683795929
+          }
+        },
+        {
+          "id": "mlp_error:L23:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P10",
+          "layer": 23,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 22.670930862426758,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.48745375871658325
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F541",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.23831908404827118,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.414827823638916
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L21:P10",
+          "score": -0.22668737173080444,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.8064448833465576
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.2238977551460266,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.7219491004943848
+          }
+        }
+      ]
+    },
+    {
+      "idx": 16,
+      "prompt": "Factories double output while sales stay flat, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/16_factories_double_output_while_sales_stay_flat_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 913,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.111683368682861,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P12",
+          "layer": 22,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 17.07866096496582,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6131812930107117
+          }
+        },
+        {
+          "id": "mlp_error:L20:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P12",
+          "layer": 20,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 11.691420555114746,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3451515734195709
+          }
+        },
+        {
+          "id": "mlp_error:L19:P12",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P12",
+          "layer": 19,
+          "pos": 12,
+          "feature_idx": null,
+          "value": 8.278518676757812,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.31497544050216675
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P12:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P12:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L22:P12",
+          "score": -0.21698476374149323,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.0491714477539062
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L23:P12",
+          "score": -0.2077701836824417,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.264413595199585
+          }
+        },
+        {
+          "source": "feature:L20:P12:F1445",
+          "target": "residual:L21:P12",
+          "score": -0.20376667380332947,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.5156171321868896
+          }
+        }
+      ]
+    },
+    {
+      "idx": 17,
+      "prompt": "Warehouses overflow with unsold goods, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/17_warehouses_overflow_with_unsold_goods_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 920,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 7.215240478515625,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 21.13033676147461,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.7687593102455139
+          }
+        },
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 15.882622718811035,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.4079107940196991
+          }
+        },
+        {
+          "id": "mlp_error:L19:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P11",
+          "layer": 19,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 10.382149696350098,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.3922748267650604
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P11:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.18283551931381226,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.6695821285247803
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.17660626769065857,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.2083194255828857
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.174033522605896,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.8515779972076416
+          }
+        }
+      ]
+    },
+    {
+      "idx": 18,
+      "prompt": "Demand collapses while supply stays high, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/18_demand_collapses_while_supply_stays_high_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 917,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.551058292388916,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 20.011192321777344,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.9842783212661743
+          }
+        },
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 10.348681449890137,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.35698723793029785
+          }
+        },
+        {
+          "id": "mlp_error:L21:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L21 P10",
+          "layer": 21,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 16.60746192932129,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.28583604097366333
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F601",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F33",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.24885976314544678,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.4927115440368652
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.23087383806705475,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.77404522895813
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L21:P10",
+          "score": -0.23075750470161438,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.8566694259643555
+          }
+        }
+      ]
+    },
+    {
+      "idx": 19,
+      "prompt": "Overproduction creates a large surplus, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/19_overproduction_creates_a_large_surplus_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 922,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 7.136878490447998,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 21.771310806274414,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -1.1584240198135376
+          }
+        },
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 14.502348899841309,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.48489779233932495
+          }
+        },
+        {
+          "id": "mlp_error:L19:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P10",
+          "layer": 19,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 10.677898406982422,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.26232510805130005
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L7:P10:F638",
+          "target": "target:0",
+          "score": 0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.20590440928936005,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.899075984954834
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.19536980986595154,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.1428256034851074
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L21:P10",
+          "score": -0.1929210126399994,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.3699116706848145
+          }
+        }
+      ]
+    },
+    {
+      "idx": 20,
+      "prompt": "Many sellers compete for few buyers, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/20_many_sellers_compete_for_few_buyers_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 925,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.014009475708008,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 16.411592483520508,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.4917789697647095
+          }
+        },
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 11.786908149719238,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.48540371656417847
+          }
+        },
+        {
+          "id": "mlp_error:L23:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P10",
+          "layer": 23,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 19.86910629272461,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.4172298312187195
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "residual:L22:P10",
+          "score": -0.21457445621490479,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.5828871726989746
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.18399199843406677,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.7333483695983887
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.18098729848861694,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.9191927909851074
+          }
+        }
+      ]
+    },
+    {
+      "idx": 21,
+      "prompt": "A subsidy makes the good far cheaper to produce, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/21_a_subsidy_makes_the_good_far_cheaper_to_produce_so_the_price_wil_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 905,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.983491897583008,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P13",
+          "layer": 22,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 21.9782657623291,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -1.1624737977981567
+          }
+        },
+        {
+          "id": "mlp_error:L21:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L21 P13",
+          "layer": 21,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 16.7593994140625,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.5646624565124512
+          }
+        },
+        {
+          "id": "mlp_error:L20:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P13",
+          "layer": 20,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 15.084668159484863,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.39440566301345825
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P13:F33",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P13:F601",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L22:P13",
+          "score": -0.23015907406806946,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.0662620067596436
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L23:P13",
+          "score": -0.20828811824321747,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.302584171295166
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L21:P13",
+          "score": -0.20538654923439026,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.502962112426758
+          }
+        }
+      ]
+    },
+    {
+      "idx": 22,
+      "prompt": "A mine discovers a huge new deposit, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/22_a_mine_discovers_a_huge_new_deposit_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 919,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 7.699230670928955,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 19.673480987548828,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.7301349639892578
+          }
+        },
+        {
+          "id": "mlp_error:L18:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L18 P11",
+          "layer": 18,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 10.011420249938965,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.6890338659286499
+          }
+        },
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 13.138806343078613,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.5681207180023193
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F541",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L23:P11",
+          "score": -0.2780503034591675,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 4.133621692657471
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.2675175964832306,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.790966749191284
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.24827846884727478,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.072007417678833
+          }
+        }
+      ]
+    },
+    {
+      "idx": 23,
+      "prompt": "Exports are banned and goods pile up at home, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/23_exports_are_banned_and_goods_pile_up_at_home_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 927,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.740017414093018,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P13",
+          "layer": 22,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 20.0349063873291,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -1.0151302814483643
+          }
+        },
+        {
+          "id": "mlp_error:L20:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P13",
+          "layer": 20,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 15.410908699035645,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.5939456224441528
+          }
+        },
+        {
+          "id": "mlp_error:L19:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P13",
+          "layer": 19,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 9.575608253479004,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.34048572182655334
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P13:F601",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "residual:L22:P13",
+          "score": -0.20027226209640503,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.1725142002105713
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L22:P13",
+          "score": -0.17687803506851196,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.542983293533325
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "residual:L21:P13",
+          "score": -0.17036789655685425,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.100539445877075
+          }
+        }
+      ]
+    },
+    {
+      "idx": 24,
+      "prompt": "A festival drives a surge of buyers, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/24_a_festival_drives_a_surge_of_buyers_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 917,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 5.831758499145508,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 12.352320671081543,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.5306391716003418
+          }
+        },
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 15.471969604492188,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.4361596703529358
+          }
+        },
+        {
+          "id": "mlp_error:L23:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P11",
+          "layer": 23,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 17.609474182128906,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.37458860874176025
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P11:F601",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.22904297709465027,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.288052797317505
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L23:P11",
+          "score": -0.2284635752439499,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.532176971435547
+          }
+        },
+        {
+          "source": "feature:L20:P11:F863",
+          "target": "residual:L22:P11",
+          "score": -0.22720414400100708,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.678795099258423
+          }
+        }
+      ]
+    },
+    {
+      "idx": 25,
+      "prompt": "Energy costs spike for every producer, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/25_energy_costs_spike_for_every_producer_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 919,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 6.368551254272461,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P10",
+          "layer": 20,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 13.372966766357422,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.7115470170974731
+          }
+        },
+        {
+          "id": "mlp_error:L23:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P10",
+          "layer": 23,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 21.163028717041016,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.5925859212875366
+          }
+        },
+        {
+          "id": "mlp_error:L22:P10",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P10",
+          "layer": 22,
+          "pos": 10,
+          "feature_idx": null,
+          "value": 17.902894973754883,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.5492711067199707
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L19:P10:F601",
+          "target": "target:0",
+          "score": -0.25,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L22:P10",
+          "score": -0.20266558229923248,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.7527217864990234
+          }
+        },
+        {
+          "source": "feature:L20:P10:F1445",
+          "target": "residual:L23:P10",
+          "score": -0.20161834359169006,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.978219509124756
+          }
+        },
+        {
+          "source": "feature:L20:P10:F863",
+          "target": "residual:L22:P10",
+          "score": -0.1975698173046112,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.1346333026885986
+          }
+        }
+      ]
+    },
+    {
+      "idx": 26,
+      "prompt": "A glut of supply meets weak demand, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/26_a_glut_of_supply_meets_weak_demand_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 910,
+      "causal_sign_match_rate": 0.875,
+      "mean_mlp_error_norm": 6.9363532066345215,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L22:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P11",
+          "layer": 22,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 21.658212661743164,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.825558066368103
+          }
+        },
+        {
+          "id": "mlp_error:L20:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P11",
+          "layer": 20,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 13.56764030456543,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.6967830657958984
+          }
+        },
+        {
+          "id": "mlp_error:L23:P11",
+          "type": "MLPErrorNode",
+          "label": "MLP error L23 P11",
+          "layer": 23,
+          "pos": 11,
+          "feature_idx": null,
+          "value": 26.07268714904785,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.576332688331604
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "target:0",
+          "score": 0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1298",
+          "target": "target:0",
+          "score": 0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L19:P11:F33",
+          "target": "residual:L23:P11",
+          "score": 0.22400587797164917,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.507343053817749
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L22:P11",
+          "score": -0.2131267786026001,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 3.1445534229278564
+          }
+        },
+        {
+          "source": "feature:L20:P11:F1445",
+          "target": "residual:L21:P11",
+          "score": -0.20966675877571106,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.5898430347442627
+          }
+        }
+      ]
+    },
+    {
+      "idx": 27,
+      "prompt": "Scarcity worsens as the season ends, so the price will",
+      "graph_path": "outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_rf_big/27_scarcity_worsens_as_the_season_ends_so_the_price_will_deep_trace.json",
+      "cache_path": null,
+      "num_nodes": 481,
+      "num_edges": 925,
+      "causal_sign_match_rate": 1.0,
+      "mean_mlp_error_norm": 5.688972473144531,
+      "top_mlp_error_nodes": [
+        {
+          "id": "mlp_error:L20:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L20 P13",
+          "layer": 20,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 11.375771522521973,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.7868762016296387
+          }
+        },
+        {
+          "id": "mlp_error:L19:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L19 P13",
+          "layer": 19,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 8.70238971710205,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": 0.504152774810791
+          }
+        },
+        {
+          "id": "mlp_error:L22:P13",
+          "type": "MLPErrorNode",
+          "label": "MLP error L22 P13",
+          "layer": 22,
+          "pos": 13,
+          "feature_idx": null,
+          "value": 15.513533592224121,
+          "metadata": {
+            "definition": "original_mlp_output - clt_reconstruction",
+            "direct_target_projection": -0.3318490982055664
+          }
+        }
+      ],
+      "top_causal_edges": [
+        {
+          "source": "feature:L19:P13:F33",
+          "target": "target:0",
+          "score": 0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F1445",
+          "target": "target:0",
+          "score": -0.5,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        },
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "target:0",
+          "score": -0.375,
+          "kind": "causal_ablation_effect",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero"
+          }
+        }
+      ],
+      "top_causal_residual_delta_edges": [
+        {
+          "source": "feature:L20:P13:F863",
+          "target": "residual:L22:P13",
+          "score": -0.2736089527606964,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 4.186224937438965
+          }
+        },
+        {
+          "source": "feature:L19:P13:F33",
+          "target": "residual:L23:P13",
+          "score": 0.23892012238502502,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.748873710632324
+          }
+        },
+        {
+          "source": "feature:L19:P13:F33",
+          "target": "residual:L21:P13",
+          "score": 0.2349802404642105,
+          "kind": "causal_feature_to_residual_delta",
+          "metadata": {
+            "is_causal": true,
+            "intervention": "set_feature_value_to_zero",
+            "score_definition": "dot(intervened_residual - replacement_residual, target_logit_direction)",
+            "delta_norm": 2.2718420028686523
+          }
+        }
+      ]
+    }
+  ]
+}

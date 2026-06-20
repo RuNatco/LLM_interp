@@ -16,7 +16,7 @@ LATIN = re.compile(r"[A-Za-z][A-Za-z\-]+")
 
 TYPE_STYLE = {
     "CLTFeatureNode": ("#378ADD", "o", "feature"),
-    "MLPErrorNode": ("#D85A30", "s", "mlp error"),
+    "MLPErrorNode": ("#8C84A0", "s", "mlp error"),
     "LogitTargetNode": ("#1D9E75", "D", "target"),
     "ResidualStreamNode": ("#c4c2ba", ".", "residual"),
     "AttentionLayerNode": ("#cdd2d6", ".", "attention"),
@@ -73,6 +73,11 @@ def is_error_edge(edge):
     return "error" in str(edge.get("kind", "")).lower()
 
 
+def edge_influence(edge):
+    score = float(edge.get("score", 0.0))
+    return -score if "ablation" in str(edge.get("kind", "")).lower() else score
+
+
 def select_edges(edges, top_edges):
     priority = [e for e in edges if is_causal_edge(e) or is_error_edge(e)]
     rest = sorted((e for e in edges if not (is_causal_edge(e) or is_error_edge(e))),
@@ -90,6 +95,9 @@ def select_edges(edges, top_edges):
 def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith_map):
     payload = json.loads(Path(graph_path).read_text())
     prompt = (payload.get("metadata", {}) or {}).get("prompt")
+    tgt_meta = (payload.get("metadata", {}) or {}).get("target", {}) or {}
+    pos_name = (tgt_meta.get("positive") or " increase").strip()
+    neg_name = (tgt_meta.get("negative") or " decrease").strip()
     if model_output is None and faith_map and prompt:
         model_output = faith_map.get(prompt)
         if model_output is None:
@@ -142,7 +150,7 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
         if s not in pos or t not in pos:
             continue
         score = float(e.get("score", 0.0))
-        color = "#73c2a4" if score >= 0 else "#e8a98f"
+        color = "#73c2a4" if edge_influence(e) >= 0 else "#e8a98f"
         ax.add_patch(FancyArrowPatch(
             pos[s], pos[t], arrowstyle="-", mutation_scale=7,
             color=color, lw=0.7, alpha=0.22, shrinkA=5, shrinkB=6,
@@ -152,7 +160,7 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
         if s not in pos or t not in pos:
             continue
         score = float(e.get("score", 0.0))
-        color = "#1D9E75" if score >= 0 else "#D85A30"
+        color = "#1D9E75" if edge_influence(e) >= 0 else "#D85A30"
         lw = 1.0 + 3.4 * min(1.0, abs(score) / 0.4)
         ax.add_patch(FancyArrowPatch(
             pos[s], pos[t], arrowstyle="-|>", mutation_scale=11,
@@ -178,6 +186,8 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
         else:
             val = abs(float(n.get("value") or 0.0))
             size = 380 if typ == "LogitTargetNode" else 150
+            if typ == "LogitTargetNode" and model_output is not None:
+                color = "#1D9E75" if model_output >= 0 else "#D85A30"
             ax.scatter([x], [y], s=size, c=color, marker=marker,
                        edgecolors="white", linewidths=0.9, zorder=4)
         label = short_label(n, labels)
@@ -186,7 +196,7 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
             if typ == "MLPErrorNode":
                 ax.annotate(label, (x, y), fontsize=6.3, ha="center", va="top",
                             xytext=(0, -11), textcoords="offset points",
-                            color="#9c5b3b", zorder=5)
+                            color="#5E5670", zorder=5)
             else:
                 feat_off = [(0, 15), (0, 27), (0, 18), (0, 33)]
                 dx, dy = feat_off[j % len(feat_off)]
@@ -201,7 +211,7 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
                       if nodes[nid].get("type") == "LogitTargetNode"), None)
         if tnode:
             tx, ty = pos[tnode]
-            d = "increase" if model_output > 0 else "decrease"
+            d = pos_name if model_output > 0 else neg_name
             ax.annotate(f"\u0432\u044b\u0445\u043e\u0434 \u2248 {model_output:+.2f} \u2192 {d}",
                         (tx, ty), fontsize=8, ha="center", va="bottom",
                         xytext=(0, 30), textcoords="offset points",
@@ -210,12 +220,16 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
     handles = []
     for typ in ["CLTFeatureNode", "MLPErrorNode", "LogitTargetNode"]:
         c, m, lab = TYPE_STYLE[typ]
+        if typ == "LogitTargetNode":
+            c, lab = "#5f6368", "target (\u0446\u0432\u0435\u0442 = \u0432\u044b\u0445\u043e\u0434)"
         handles.append(plt.Line2D([], [], marker=m, color="w", markerfacecolor=c,
                                   markersize=9, label=lab))
     handles.append(plt.Line2D([], [], color="#9aa0a6", marker="o", lw=0,
                               markersize=5, label="attn / residual / ln"))
-    handles.append(plt.Line2D([], [], color="#1D9E75", lw=3, label="causal score > 0"))
-    handles.append(plt.Line2D([], [], color="#D85A30", lw=3, label="causal score < 0"))
+    handles.append(plt.Line2D([], [], color="#1D9E75", lw=3,
+                              label=f"causal score > 0 (\u2192 {pos_name})"))
+    handles.append(plt.Line2D([], [], color="#D85A30", lw=3,
+                              label=f"causal score < 0 (\u2192 {neg_name})"))
     ax.legend(handles=handles, loc="upper left", fontsize=8, frameon=False,
               ncol=1, labelspacing=0.35, handletextpad=0.5, borderaxespad=0.4)
     ax.annotate("\u0440\u0430\u0437\u043c\u0435\u0440/\u043d\u0430\u0441\u044b\u0449\u0435\u043d\u043d\u043e\u0441\u0442\u044c \u0444\u0438\u0447 \u221d |\u043a\u0430\u0443\u0437\u0430\u043b\u044c\u043d\u044b\u0439 \u0431\u0430\u043b\u043b| (\u0437\u0430\u0434\u0435\u0439\u0441\u0442\u0432\u043e\u0432\u0430\u043d\u043d\u043e\u0441\u0442\u044c)",

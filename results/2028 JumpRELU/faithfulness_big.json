@@ -1,0 +1,263 @@
+{
+  "n_prompts": 27,
+  "mean_auc_graph": 0.3509,
+  "mean_auc_random": -0.2432,
+  "mean_faithfulness_gap": -0.5942,
+  "fractions": [
+    0.0,
+    0.1,
+    0.2,
+    0.30000000000000004,
+    0.4,
+    0.5,
+    0.6000000000000001,
+    0.7000000000000001,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "mean_curve_graph": [
+    1.0,
+    0.5848096834938938,
+    0.5909810040511795,
+    0.5717366562395801,
+    0.5187764531331782,
+    0.5233543200356066,
+    0.457609514700158,
+    0.3420607919803827,
+    -0.17731058334128508,
+    -0.624373266705138,
+    0.44303708758752613
+  ],
+  "mean_curve_random": [
+    1.0,
+    0.39443714905410815,
+    0.2732362891602658,
+    0.06565223053965744,
+    -0.09466154843640225,
+    -0.28793767895522276,
+    -0.5313038328359967,
+    -0.7023487198852697,
+    -1.0044253366232534,
+    -1.2666435421574311,
+    0.44303708758752613
+  ],
+  "per_prompt": [
+    {
+      "idx": 1,
+      "prompt": "Demand rises sharply while supply stays flat, so the price will",
+      "base_metric": 1.375,
+      "auc_graph": 0.2761,
+      "auc_random": 0.0434,
+      "faithfulness_gap": -0.2327
+    },
+    {
+      "idx": 2,
+      "prompt": "Demand is greater than generation, so the price will",
+      "base_metric": 1.375,
+      "auc_graph": 0.3308,
+      "auc_random": -0.6401,
+      "faithfulness_gap": -0.9709
+    },
+    {
+      "idx": 3,
+      "prompt": "A drought destroys much of the harvest, so the price will",
+      "base_metric": 0.5,
+      "auc_graph": 0.3969,
+      "auc_random": -1.5394,
+      "faithfulness_gap": -1.9363
+    },
+    {
+      "idx": 4,
+      "prompt": "A product becomes scarce while buyers still need it, so the price will",
+      "base_metric": 1.0,
+      "auc_graph": 0.5703,
+      "auc_random": -0.2497,
+      "faithfulness_gap": -0.82
+    },
+    {
+      "idx": 5,
+      "prompt": "Fuel supply is cut while demand keeps growing, so the price will",
+      "base_metric": 1.125,
+      "auc_graph": 0.65,
+      "auc_random": 0.0011,
+      "faithfulness_gap": -0.6489
+    },
+    {
+      "idx": 6,
+      "prompt": "Buyers rush to stockpile a limited good, so the price will",
+      "base_metric": 2.375,
+      "auc_graph": 0.2638,
+      "auc_random": -0.1278,
+      "faithfulness_gap": -0.3916
+    },
+    {
+      "idx": 7,
+      "prompt": "Shortages spread across the market, so the price will",
+      "base_metric": 0.5,
+      "auc_graph": 0.7844,
+      "auc_random": -0.3756,
+      "faithfulness_gap": -1.16
+    },
+    {
+      "idx": 8,
+      "prompt": "Production halts but orders keep coming, so the price will",
+      "base_metric": 2.625,
+      "auc_graph": 0.3304,
+      "auc_random": -0.1446,
+      "faithfulness_gap": -0.475
+    },
+    {
+      "idx": 9,
+      "prompt": "A new tariff raises import costs, so the price will",
+      "base_metric": 1.25,
+      "auc_graph": 0.4238,
+      "auc_random": 0.2778,
+      "faithfulness_gap": -0.146
+    },
+    {
+      "idx": 10,
+      "prompt": "Demand doubles overnight while stock is fixed, so the price will",
+      "base_metric": 1.5,
+      "auc_graph": 0.4073,
+      "auc_random": -0.1572,
+      "faithfulness_gap": -0.5645
+    },
+    {
+      "idx": 11,
+      "prompt": "Supply chains break down during peak demand, so the price will",
+      "base_metric": 1.375,
+      "auc_graph": 0.5034,
+      "auc_random": -0.202,
+      "faithfulness_gap": -0.7055
+    },
+    {
+      "idx": 12,
+      "prompt": "Inventory runs low as customers keep buying, so the price will",
+      "base_metric": 1.5,
+      "auc_graph": 0.474,
+      "auc_random": -0.1552,
+      "faithfulness_gap": -0.6292
+    },
+    {
+      "idx": 13,
+      "prompt": "A bumper harvest floods the market with grain, so the price will",
+      "base_metric": 1.875,
+      "auc_graph": 0.39,
+      "auc_random": -0.3043,
+      "faithfulness_gap": -0.6943
+    },
+    {
+      "idx": 14,
+      "prompt": "Generation exceeds demand, so the price will",
+      "base_metric": 1.625,
+      "auc_graph": 0.1161,
+      "auc_random": -0.1885,
+      "faithfulness_gap": -0.3046
+    },
+    {
+      "idx": 15,
+      "prompt": "Supply is far greater than demand, so the price will",
+      "base_metric": 0.75,
+      "auc_graph": 0.3396,
+      "auc_random": -1.0896,
+      "faithfulness_gap": -1.4292
+    },
+    {
+      "idx": 16,
+      "prompt": "Factories double output while sales stay flat, so the price will",
+      "base_metric": 0.625,
+      "auc_graph": 0.57,
+      "auc_random": -0.376,
+      "faithfulness_gap": -0.946
+    },
+    {
+      "idx": 17,
+      "prompt": "Warehouses overflow with unsold goods, so the price will",
+      "base_metric": 0.875,
+      "auc_graph": 0.5196,
+      "auc_random": -0.5075,
+      "faithfulness_gap": -1.0271
+    },
+    {
+      "idx": 18,
+      "prompt": "Demand collapses while supply stays high, so the price will",
+      "base_metric": -0.5,
+      "auc_graph": -0.2094,
+      "auc_random": 1.0331,
+      "faithfulness_gap": 1.2425
+    },
+    {
+      "idx": 19,
+      "prompt": "Overproduction creates a large surplus, so the price will",
+      "base_metric": 0.5,
+      "auc_graph": 0.2094,
+      "auc_random": -1.6256,
+      "faithfulness_gap": -1.835
+    },
+    {
+      "idx": 20,
+      "prompt": "Many sellers compete for few buyers, so the price will",
+      "base_metric": 0.875,
+      "auc_graph": 0.2268,
+      "auc_random": -0.2589,
+      "faithfulness_gap": -0.4857
+    },
+    {
+      "idx": 21,
+      "prompt": "A subsidy makes the good far cheaper to produce, so the price will",
+      "base_metric": -1.875,
+      "auc_graph": -0.0008,
+      "auc_random": 0.5028,
+      "faithfulness_gap": 0.5037
+    },
+    {
+      "idx": 22,
+      "prompt": "A mine discovers a huge new deposit, so the price will",
+      "base_metric": 2.25,
+      "auc_graph": 0.3493,
+      "auc_random": -0.0285,
+      "faithfulness_gap": -0.3778
+    },
+    {
+      "idx": 23,
+      "prompt": "Exports are banned and goods pile up at home, so the price will",
+      "base_metric": 1.375,
+      "auc_graph": 0.4466,
+      "auc_random": 0.0257,
+      "faithfulness_gap": -0.4209
+    },
+    {
+      "idx": 24,
+      "prompt": "A festival drives a surge of buyers, so the price will",
+      "base_metric": 2.0,
+      "auc_graph": 0.3805,
+      "auc_random": -0.0308,
+      "faithfulness_gap": -0.4112
+    },
+    {
+      "idx": 25,
+      "prompt": "Energy costs spike for every producer, so the price will",
+      "base_metric": 3.125,
+      "auc_graph": 0.1555,
+      "auc_random": -0.0277,
+      "faithfulness_gap": -0.1832
+    },
+    {
+      "idx": 26,
+      "prompt": "A glut of supply meets weak demand, so the price will",
+      "base_metric": 1.125,
+      "auc_graph": 0.2819,
+      "auc_random": -0.3036,
+      "faithfulness_gap": -0.5856
+    },
+    {
+      "idx": 27,
+      "prompt": "Scarcity worsens as the season ends, so the price will",
+      "base_metric": 1.5,
+      "auc_graph": 0.2885,
+      "auc_random": -0.119,
+      "faithfulness_gap": -0.4075
+    }
+  ]
+}

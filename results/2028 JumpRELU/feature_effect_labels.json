@@ -1,0 +1,3527 @@
+{
+  "L0:F395": {
+    "layer": 0,
+    "feature": 395,
+    "target_effect": 0.5694,
+    "pushes": "increase",
+    "effect_norm": 3.2967,
+    "concept": "findOne",
+    "top_promoted": [
+      " findOne",
+      "pek",
+      "uentes",
+      " giants",
+      " klub",
+      " Celt"
+    ],
+    "top_suppressed": [
+      " vis",
+      " would",
+      "itecture",
+      " canvas",
+      "ospital",
+      " mor"
+    ],
+    "label": "→ increase (+0.57); «findOne»"
+  },
+  "L0:F440": {
+    "layer": 0,
+    "feature": 440,
+    "target_effect": 1.1995,
+    "pushes": "increase",
+    "effect_norm": 3.4841,
+    "concept": "odore",
+    "top_promoted": [
+      "odore",
+      "album",
+      " utter",
+      " oldest",
+      " estimated",
+      "OTHER"
+    ],
+    "top_suppressed": [
+      "venues",
+      " Fundamental",
+      "venue",
+      "Weapon",
+      "Property",
+      "Metric"
+    ],
+    "label": "→ increase (+1.20); «odore»"
+  },
+  "L0:F758": {
+    "layer": 0,
+    "feature": 758,
+    "target_effect": 0.9048,
+    "pushes": "increase",
+    "effect_norm": 3.2364,
+    "concept": "bpp",
+    "top_promoted": [
+      "bpp",
+      " ters",
+      "stants",
+      " responseType",
+      " voksen",
+      " socket"
+    ],
+    "top_suppressed": [
+      "During",
+      " distracting",
+      " calloc",
+      " detected",
+      " Qaeda",
+      " Brom"
+    ],
+    "label": "→ increase (+0.90); «bpp»"
+  },
+  "L0:F822": {
+    "layer": 0,
+    "feature": 822,
+    "target_effect": -1.2034,
+    "pushes": "decrease",
+    "effect_norm": 3.2145,
+    "concept": "Fly",
+    "top_promoted": [
+      " Fly",
+      " disciples",
+      " PRO",
+      " flies",
+      " Fred",
+      "mu"
+    ],
+    "top_suppressed": [
+      " bindActionCreators",
+      "aternion",
+      "aname",
+      " notifier",
+      " Decode",
+      "letters"
+    ],
+    "label": "→ decrease (-1.20); «Fly»"
+  },
+  "L0:F1234": {
+    "layer": 0,
+    "feature": 1234,
+    "target_effect": 1.1454,
+    "pushes": "increase",
+    "effect_norm": 3.2941,
+    "concept": "haunt",
+    "top_promoted": [
+      " haunt",
+      " akt",
+      " Ingen",
+      " exclude",
+      " tech",
+      "OUNTRY"
+    ],
+    "top_suppressed": [
+      " ddl",
+      " SSD",
+      " MYSQL",
+      "Md",
+      "LTE",
+      "getDb"
+    ],
+    "label": "→ increase (+1.15); «haunt»"
+  },
+  "L0:F1570": {
+    "layer": 0,
+    "feature": 1570,
+    "target_effect": 1.2831,
+    "pushes": "increase",
+    "effect_norm": 3.2677,
+    "concept": "unlocking",
+    "top_promoted": [
+      " unlocking",
+      "Something",
+      " tower",
+      " newborn",
+      "pres",
+      "tur"
+    ],
+    "top_suppressed": [
+      " MET",
+      " ucz",
+      "WithMany",
+      " sincere",
+      "emiah",
+      " Julie"
+    ],
+    "label": "→ increase (+1.28); «unlocking»"
+  },
+  "L0:F1817": {
+    "layer": 0,
+    "feature": 1817,
+    "target_effect": 1.172,
+    "pushes": "increase",
+    "effect_norm": 3.0965,
+    "concept": "Rx",
+    "top_promoted": [
+      "Rx",
+      "osc",
+      "echa",
+      "ogl",
+      " rescue",
+      "oce"
+    ],
+    "top_suppressed": [
+      "oleans",
+      " DISABLE",
+      "Brun",
+      " Michigan",
+      " pledge",
+      "Decoration"
+    ],
+    "label": "→ increase (+1.17); «Rx»"
+  },
+  "L1:F741": {
+    "layer": 1,
+    "feature": 741,
+    "target_effect": -0.5844,
+    "pushes": "decrease",
+    "effect_norm": 2.7992,
+    "concept": "set",
+    "top_promoted": [
+      " set",
+      " Monica",
+      "DEM",
+      "elp",
+      "ursively",
+      " Luke"
+    ],
+    "top_suppressed": [
+      "faker",
+      "oug",
+      "reeting",
+      " sabe",
+      "agues",
+      "bars"
+    ],
+    "label": "→ decrease (-0.58); «set»"
+  },
+  "L2:F690": {
+    "layer": 2,
+    "feature": 690,
+    "target_effect": 0.4958,
+    "pushes": "increase",
+    "effect_norm": 3.464,
+    "concept": "likely",
+    "top_promoted": [
+      " likely",
+      " Definitely",
+      " undoubtedly",
+      " certainly",
+      " proudly",
+      " nrw"
+    ],
+    "top_suppressed": [
+      "mixed",
+      " om",
+      "Had",
+      " confessed",
+      "Carlos",
+      " amounted"
+    ],
+    "label": "→ increase (+0.50); «likely»"
+  },
+  "L2:F1306": {
+    "layer": 2,
+    "feature": 1306,
+    "target_effect": -0.602,
+    "pushes": "decrease",
+    "effect_norm": 3.3304,
+    "concept": "depend",
+    "top_promoted": [
+      " depend",
+      " poke",
+      " dive",
+      "iks",
+      " rely",
+      "achel"
+    ],
+    "top_suppressed": [
+      "equality",
+      "Area",
+      "enment",
+      "sign",
+      " bulletin",
+      " Era"
+    ],
+    "label": "→ decrease (-0.60); «depend»"
+  },
+  "L3:F373": {
+    "layer": 3,
+    "feature": 373,
+    "target_effect": 0.7411,
+    "pushes": "increase",
+    "effect_norm": 3.5413,
+    "concept": "Andersen",
+    "top_promoted": [
+      " Andersen",
+      " modelling",
+      "few",
+      " affected",
+      " or",
+      "JECTED"
+    ],
+    "top_suppressed": [
+      " dum",
+      " Cha",
+      " Persona",
+      " disclosures",
+      " jap",
+      "coord"
+    ],
+    "label": "→ increase (+0.74); «Andersen»"
+  },
+  "L4:F1238": {
+    "layer": 4,
+    "feature": 1238,
+    "target_effect": -0.261,
+    "pushes": "decrease",
+    "effect_norm": 2.1987,
+    "concept": "unfortunate",
+    "top_promoted": [
+      " unfortunate",
+      " MPU",
+      " bastard",
+      " distressed",
+      " Tic",
+      " HCI"
+    ],
+    "top_suppressed": [
+      "INS",
+      " overwrite",
+      "inside",
+      "win",
+      "INE",
+      " Bold"
+    ],
+    "label": "→ decrease (-0.26); «unfortunate»"
+  },
+  "L4:F2015": {
+    "layer": 4,
+    "feature": 2015,
+    "target_effect": -0.7308,
+    "pushes": "decrease",
+    "effect_norm": 2.3815,
+    "concept": "abeth",
+    "top_promoted": [
+      "abeth",
+      " psz",
+      " Disabilities",
+      " Stops",
+      " psychosis",
+      " Stacy"
+    ],
+    "top_suppressed": [
+      "navigationBar",
+      "xr",
+      " govern",
+      "urement",
+      " Fn",
+      "mailer"
+    ],
+    "label": "→ decrease (-0.73); «abeth»"
+  },
+  "L6:F197": {
+    "layer": 6,
+    "feature": 197,
+    "target_effect": -0.482,
+    "pushes": "decrease",
+    "effect_norm": 3.7131,
+    "concept": "occured",
+    "top_promoted": [
+      " occured",
+      "\tbe",
+      " occurred",
+      " aconte",
+      " happened",
+      " Happ"
+    ],
+    "top_suppressed": [
+      " design",
+      " designing",
+      " DialogInterface",
+      " knows",
+      "cljs",
+      "android"
+    ],
+    "label": "→ decrease (-0.48); «occured»"
+  },
+  "L6:F1246": {
+    "layer": 6,
+    "feature": 1246,
+    "target_effect": -0.805,
+    "pushes": "decrease",
+    "effect_norm": 2.517,
+    "concept": "cts",
+    "top_promoted": [
+      "cts",
+      " admits",
+      " creates",
+      " USE",
+      "named",
+      "\tself"
+    ],
+    "top_suppressed": [
+      " ion",
+      " interfer",
+      "Insn",
+      " shifting",
+      " Wanna",
+      " coordinate"
+    ],
+    "label": "→ decrease (-0.81); «cts»"
+  },
+  "L7:F405": {
+    "layer": 7,
+    "feature": 405,
+    "target_effect": -0.6501,
+    "pushes": "decrease",
+    "effect_norm": 2.4883,
+    "concept": "ugly",
+    "top_promoted": [
+      " ugly",
+      " Wendy",
+      "Qual",
+      "PRETTY",
+      " Ashton",
+      "export"
+    ],
+    "top_suppressed": [
+      "policy",
+      " skulls",
+      " zb",
+      " Kinect",
+      " Arms",
+      "oste"
+    ],
+    "label": "→ decrease (-0.65); «ugly»"
+  },
+  "L7:F638": {
+    "layer": 7,
+    "feature": 638,
+    "target_effect": -1.0957,
+    "pushes": "decrease",
+    "effect_norm": 3.7059,
+    "concept": "will",
+    "top_promoted": [
+      " will",
+      " Frequently",
+      " oft",
+      " sometimes",
+      " occasionally",
+      " often"
+    ],
+    "top_suppressed": [
+      " Vide",
+      " ToString",
+      " typeid",
+      " restarted",
+      "orz",
+      " LinearLayout"
+    ],
+    "label": "→ decrease (-1.10); «will»"
+  },
+  "L8:F586": {
+    "layer": 8,
+    "feature": 586,
+    "target_effect": 0.8987,
+    "pushes": "increase",
+    "effect_norm": 1.9959,
+    "concept": "tonnes",
+    "top_promoted": [
+      " tonnes",
+      " Earlier",
+      "ultiple",
+      "isation",
+      " decades",
+      " Decode"
+    ],
+    "top_suppressed": [
+      "ner",
+      "nder",
+      " spot",
+      "sein",
+      " requestData",
+      " moyen"
+    ],
+    "label": "→ increase (+0.90); «tonnes»"
+  },
+  "L8:F630": {
+    "layer": 8,
+    "feature": 630,
+    "target_effect": -0.8891,
+    "pushes": "decrease",
+    "effect_norm": 2.7966,
+    "concept": "wides",
+    "top_promoted": [
+      " wides",
+      " latter",
+      "vars",
+      " stray",
+      "ughters",
+      " than"
+    ],
+    "top_suppressed": [
+      " Nz",
+      " Nurs",
+      "TEL",
+      "Immediately",
+      " inhibitor",
+      " peux"
+    ],
+    "label": "→ decrease (-0.89); «wides»"
+  },
+  "L8:F824": {
+    "layer": 8,
+    "feature": 824,
+    "target_effect": 0.4555,
+    "pushes": "increase",
+    "effect_norm": 2.1524,
+    "concept": "scm",
+    "top_promoted": [
+      " scm",
+      " adulte",
+      "tick",
+      " Comparable",
+      "levator",
+      " pomoc"
+    ],
+    "top_suppressed": [
+      " Blitz",
+      "adors",
+      " typename",
+      " mystery",
+      " HDR",
+      " foi"
+    ],
+    "label": "→ increase (+0.46); «scm»"
+  },
+  "L8:F986": {
+    "layer": 8,
+    "feature": 986,
+    "target_effect": 0.8405,
+    "pushes": "increase",
+    "effect_norm": 1.8772,
+    "concept": "cris",
+    "top_promoted": [
+      " cris",
+      " Struct",
+      "ru",
+      " NSLayoutConstraint",
+      "SIZE",
+      " Ra"
+    ],
+    "top_suppressed": [
+      " blackjack",
+      "Applications",
+      " choses",
+      "middlewares",
+      "stash",
+      " schizophrenia"
+    ],
+    "label": "→ increase (+0.84); «cris»"
+  },
+  "L8:F2041": {
+    "layer": 8,
+    "feature": 2041,
+    "target_effect": 0.9022,
+    "pushes": "increase",
+    "effect_norm": 3.0282,
+    "concept": "IZES",
+    "top_promoted": [
+      "IZES",
+      "StringUtils",
+      "AAP",
+      "AAC",
+      "pyx",
+      "Never"
+    ],
+    "top_suppressed": [
+      " begged",
+      " folklore",
+      " affirm",
+      " Gobierno",
+      "estado",
+      " Yesterday"
+    ],
+    "label": "→ increase (+0.90); «IZES»"
+  },
+  "L9:F193": {
+    "layer": 9,
+    "feature": 193,
+    "target_effect": -0.6612,
+    "pushes": "decrease",
+    "effect_norm": 1.9416,
+    "concept": "ICO",
+    "top_promoted": [
+      "ICO",
+      "ueur",
+      " vegas",
+      " Tmax",
+      " tabBar",
+      "quia"
+    ],
+    "top_suppressed": [
+      " refinement",
+      " mill",
+      " Famil",
+      " deadly",
+      " her",
+      " textual"
+    ],
+    "label": "→ decrease (-0.66); «ICO»"
+  },
+  "L9:F895": {
+    "layer": 9,
+    "feature": 895,
+    "target_effect": -0.7073,
+    "pushes": "decrease",
+    "effect_norm": 1.914,
+    "concept": "updater",
+    "top_promoted": [
+      " updater",
+      "ificador",
+      "Verifier",
+      "battery",
+      "\texpect",
+      "Yaw"
+    ],
+    "top_suppressed": [
+      " complied",
+      " menggunakan",
+      " kein",
+      " Stafford",
+      " Typography",
+      " Richie"
+    ],
+    "label": "→ decrease (-0.71); «updater»"
+  },
+  "L9:F954": {
+    "layer": 9,
+    "feature": 954,
+    "target_effect": -0.6941,
+    "pushes": "decrease",
+    "effect_norm": 1.9751,
+    "concept": "ref",
+    "top_promoted": [
+      "ref",
+      " Rev",
+      " lose",
+      "ru",
+      " Becky",
+      "ti"
+    ],
+    "top_suppressed": [
+      " Newest",
+      "AuthToken",
+      "gaard",
+      " Jong",
+      " forme",
+      "aptcha"
+    ],
+    "label": "→ decrease (-0.69); «ref»"
+  },
+  "L9:F1151": {
+    "layer": 9,
+    "feature": 1151,
+    "target_effect": 0.668,
+    "pushes": "increase",
+    "effect_norm": 1.9998,
+    "concept": "brun",
+    "top_promoted": [
+      " brun",
+      "usz",
+      "ZR",
+      "arten",
+      " tema",
+      " tipos"
+    ],
+    "top_suppressed": [
+      " Excel",
+      " If",
+      "alesce",
+      " Its",
+      " Duplicate",
+      " Consider"
+    ],
+    "label": "→ increase (+0.67); «brun»"
+  },
+  "L9:F1584": {
+    "layer": 9,
+    "feature": 1584,
+    "target_effect": -0.602,
+    "pushes": "decrease",
+    "effect_norm": 2.2319,
+    "concept": "sollte",
+    "top_promoted": [
+      " sollte",
+      "Return",
+      " fueron",
+      " Locations",
+      " asses",
+      " volver"
+    ],
+    "top_suppressed": [
+      "umd",
+      "released",
+      "contracts",
+      "redni",
+      "TPL",
+      "pisa"
+    ],
+    "label": "→ decrease (-0.60); «sollte»"
+  },
+  "L11:F33": {
+    "layer": 11,
+    "feature": 33,
+    "target_effect": -0.5694,
+    "pushes": "decrease",
+    "effect_norm": 1.8344,
+    "concept": "organizations",
+    "top_promoted": [
+      " organizations",
+      " thinking",
+      "Org",
+      "Organization",
+      " generar",
+      " thought"
+    ],
+    "top_suppressed": [
+      "ivet",
+      " intact",
+      "itbart",
+      "flate",
+      " Surv",
+      "grese"
+    ],
+    "label": "→ decrease (-0.57); «organizations»"
+  },
+  "L11:F470": {
+    "layer": 11,
+    "feature": 470,
+    "target_effect": -0.8542,
+    "pushes": "decrease",
+    "effect_norm": 1.8799,
+    "concept": "andre",
+    "top_promoted": [
+      " andre",
+      " finns",
+      "speech",
+      " Operand",
+      " Laurie",
+      " Creation"
+    ],
+    "top_suppressed": [
+      " dopo",
+      " ubiquitous",
+      "Blocks",
+      " useRef",
+      "ITY",
+      " Tuesday"
+    ],
+    "label": "→ decrease (-0.85); «andre»"
+  },
+  "L11:F1414": {
+    "layer": 11,
+    "feature": 1414,
+    "target_effect": 0.3933,
+    "pushes": "increase",
+    "effect_norm": 1.8722,
+    "concept": "attacked",
+    "top_promoted": [
+      " attacked",
+      "rogram",
+      " festival",
+      "akra",
+      "package",
+      " analysed"
+    ],
+    "top_suppressed": [
+      " QStringLiteral",
+      " eve",
+      "pez",
+      " corrid",
+      " fences",
+      "avid"
+    ],
+    "label": "→ increase (+0.39); «attacked»"
+  },
+  "L11:F1499": {
+    "layer": 11,
+    "feature": 1499,
+    "target_effect": 0.3576,
+    "pushes": "increase",
+    "effect_norm": 1.8155,
+    "concept": "Instruction",
+    "top_promoted": [
+      " Instruction",
+      " wilt",
+      "Wa",
+      " wirk",
+      " instructional",
+      " webpage"
+    ],
+    "top_suppressed": [
+      "PyObject",
+      "dle",
+      "bon",
+      "\tSELECT",
+      " enjoy",
+      "fprintf"
+    ],
+    "label": "→ increase (+0.36); «Instruction»"
+  },
+  "L13:F86": {
+    "layer": 13,
+    "feature": 86,
+    "target_effect": 0.678,
+    "pushes": "increase",
+    "effect_norm": 2.7505,
+    "concept": "Buying",
+    "top_promoted": [
+      "Buying",
+      "ORIA",
+      " Ease",
+      " tunes",
+      "draul",
+      " piracy"
+    ],
+    "top_suppressed": [
+      " want",
+      " Panic",
+      "ag",
+      " flagged",
+      " thinking",
+      " wants"
+    ],
+    "label": "→ increase (+0.68); «Buying»"
+  },
+  "L13:F602": {
+    "layer": 13,
+    "feature": 602,
+    "target_effect": -0.4487,
+    "pushes": "decrease",
+    "effect_norm": 1.3061,
+    "concept": "welche",
+    "top_promoted": [
+      " welche",
+      " proceedings",
+      " fscanf",
+      " textView",
+      "tec",
+      " Stanford"
+    ],
+    "top_suppressed": [
+      " basePath",
+      "FragmentManager",
+      "edian",
+      " Libyan",
+      "Eb",
+      " backstage"
+    ],
+    "label": "→ decrease (-0.45); «welche»"
+  },
+  "L15:F11": {
+    "layer": 15,
+    "feature": 11,
+    "target_effect": -0.9673,
+    "pushes": "decrease",
+    "effect_norm": 2.0574,
+    "concept": "April",
+    "top_promoted": [
+      " April",
+      " June",
+      " January",
+      " February",
+      " September",
+      " November"
+    ],
+    "top_suppressed": [
+      "daily",
+      "Clientes",
+      " Overnight",
+      " klient",
+      "Servi",
+      " isKindOfClass"
+    ],
+    "label": "→ decrease (-0.97); «April»"
+  },
+  "L15:F1682": {
+    "layer": 15,
+    "feature": 1682,
+    "target_effect": 0.3802,
+    "pushes": "increase",
+    "effect_norm": 1.2991,
+    "concept": "Spicer",
+    "top_promoted": [
+      " Spicer",
+      "Trader",
+      " joven",
+      " eins",
+      "dependence",
+      "RIX"
+    ],
+    "top_suppressed": [
+      "alias",
+      " Scan",
+      " AI",
+      " bf",
+      " yaz",
+      " Job"
+    ],
+    "label": "→ increase (+0.38); «Spicer»"
+  },
+  "L15:F1894": {
+    "layer": 15,
+    "feature": 1894,
+    "target_effect": -0.5619,
+    "pushes": "decrease",
+    "effect_norm": 1.8119,
+    "concept": "indicated",
+    "top_promoted": [
+      " indicated",
+      " indicative",
+      " indicates",
+      " indicating",
+      "umlah",
+      "Makes"
+    ],
+    "top_suppressed": [
+      "uncios",
+      "that",
+      " organisation",
+      " Twice",
+      " COLLECTION",
+      "anness"
+    ],
+    "label": "→ decrease (-0.56); «indicated»"
+  },
+  "L16:F866": {
+    "layer": 16,
+    "feature": 866,
+    "target_effect": 0.2593,
+    "pushes": "increase",
+    "effect_norm": 2.6232,
+    "concept": "receive",
+    "top_promoted": [
+      "receive",
+      " find",
+      "amate",
+      " contain",
+      " appear",
+      " occur"
+    ],
+    "top_suppressed": [
+      "Can",
+      " Turning",
+      " Mixing",
+      " Was",
+      " did",
+      " WILL"
+    ],
+    "label": "→ increase (+0.26); «receive»"
+  },
+  "L16:F1128": {
+    "layer": 16,
+    "feature": 1128,
+    "target_effect": -0.6239,
+    "pushes": "decrease",
+    "effect_norm": 1.7774,
+    "concept": "Worship",
+    "top_promoted": [
+      " Worship",
+      " difficulties",
+      " murm",
+      " Difficulty",
+      "Fade",
+      " flap"
+    ],
+    "top_suppressed": [
+      " scalable",
+      " righteous",
+      "following",
+      " fitting",
+      "parate",
+      " restraint"
+    ],
+    "label": "→ decrease (-0.62); «Worship»"
+  },
+  "L17:F206": {
+    "layer": 17,
+    "feature": 206,
+    "target_effect": 0.4003,
+    "pushes": "increase",
+    "effect_norm": 1.9373,
+    "concept": "MethodManager",
+    "top_promoted": [
+      "MethodManager",
+      "BeginInit",
+      "PlainText",
+      "leDb",
+      " buen",
+      " intestine"
+    ],
+    "top_suppressed": [
+      " rejecting",
+      " contributing",
+      " suppressing",
+      " executing",
+      " denying",
+      " issuing"
+    ],
+    "label": "→ increase (+0.40); «MethodManager»"
+  },
+  "L17:F928": {
+    "layer": 17,
+    "feature": 928,
+    "target_effect": 0.4226,
+    "pushes": "increase",
+    "effect_norm": 1.3487,
+    "concept": "UserRole",
+    "top_promoted": [
+      "UserRole",
+      " combineReducers",
+      "Firefox",
+      " timespec",
+      "Mozilla",
+      "agenda"
+    ],
+    "top_suppressed": [
+      " enemy",
+      " landed",
+      "Apis",
+      " Umb",
+      "DECL",
+      " unos"
+    ],
+    "label": "→ increase (+0.42); «UserRole»"
+  },
+  "L17:F1039": {
+    "layer": 17,
+    "feature": 1039,
+    "target_effect": -0.503,
+    "pushes": "decrease",
+    "effect_norm": 1.5204,
+    "concept": "yal",
+    "top_promoted": [
+      " yal",
+      " separates",
+      "atorium",
+      "shal",
+      " basePath",
+      " Sets"
+    ],
+    "top_suppressed": [
+      " remain",
+      " stay",
+      " disappear",
+      " evolving",
+      " staying",
+      " emerge"
+    ],
+    "label": "→ decrease (-0.50); «yal»"
+  },
+  "L18:F7": {
+    "layer": 18,
+    "feature": 7,
+    "target_effect": -0.2695,
+    "pushes": "decrease",
+    "effect_norm": 1.5496,
+    "concept": "leading",
+    "top_promoted": [
+      "leading",
+      "Trash",
+      " YEARS",
+      "Meg",
+      "entity",
+      "eating"
+    ],
+    "top_suppressed": [
+      " perceived",
+      " variance",
+      " money",
+      " communications",
+      " variant",
+      " differences"
+    ],
+    "label": "→ decrease (-0.27); «leading»"
+  },
+  "L18:F158": {
+    "layer": 18,
+    "feature": 158,
+    "target_effect": 0.4089,
+    "pushes": "increase",
+    "effect_norm": 1.4695,
+    "concept": "RectTransform",
+    "top_promoted": [
+      " RectTransform",
+      "Quad",
+      " Prostit",
+      "plan",
+      " Tod",
+      "comput"
+    ],
+    "top_suppressed": [
+      " EL",
+      " Fay",
+      " simplify",
+      " alien",
+      " simplified",
+      " inputs"
+    ],
+    "label": "→ increase (+0.41); «RectTransform»"
+  },
+  "L18:F415": {
+    "layer": 18,
+    "feature": 415,
+    "target_effect": 0.4277,
+    "pushes": "increase",
+    "effect_norm": 1.3229,
+    "concept": "Rally",
+    "top_promoted": [
+      " Rally",
+      "vg",
+      " hacer",
+      " Hardcore",
+      " aussi",
+      "\targ"
+    ],
+    "top_suppressed": [
+      "PLIED",
+      "ONES",
+      "CRET",
+      "expired",
+      "omp",
+      "roadcast"
+    ],
+    "label": "→ increase (+0.43); «Rally»"
+  },
+  "L18:F552": {
+    "layer": 18,
+    "feature": 552,
+    "target_effect": 0.2826,
+    "pushes": "increase",
+    "effect_norm": 1.7944,
+    "concept": "UK",
+    "top_promoted": [
+      " UK",
+      " Maths",
+      " Whilst",
+      " Scottish",
+      " enquiries",
+      " bespoke"
+    ],
+    "top_suppressed": [
+      "neighbor",
+      " neighborhoods",
+      " colored",
+      "favor",
+      " tumor",
+      " cfg"
+    ],
+    "label": "→ increase (+0.28); «UK»"
+  },
+  "L18:F1543": {
+    "layer": 18,
+    "feature": 1543,
+    "target_effect": 0.3688,
+    "pushes": "increase",
+    "effect_norm": 1.2397,
+    "concept": "AUTO",
+    "top_promoted": [
+      " AUTO",
+      "ibraries",
+      "iguiente",
+      "\tflags",
+      "instein",
+      "ifferential"
+    ],
+    "top_suppressed": [
+      " consum",
+      "communication",
+      " runway",
+      " unsubscribe",
+      "StringBuilder",
+      "lasting"
+    ],
+    "label": "→ increase (+0.37); «AUTO»"
+  },
+  "L18:F1566": {
+    "layer": 18,
+    "feature": 1566,
+    "target_effect": -0.4974,
+    "pushes": "decrease",
+    "effect_norm": 1.2204,
+    "concept": "thereby",
+    "top_promoted": [
+      " thereby",
+      "Cor",
+      "Subtitle",
+      "Short",
+      "OWNER",
+      "Copy"
+    ],
+    "top_suppressed": [
+      " comparisons",
+      " examined",
+      " analysed",
+      " Legislative",
+      " Nichols",
+      " hemos"
+    ],
+    "label": "→ decrease (-0.50); «thereby»"
+  },
+  "L18:F1810": {
+    "layer": 18,
+    "feature": 1810,
+    "target_effect": 0.3089,
+    "pushes": "increase",
+    "effect_norm": 1.1634,
+    "concept": "Concurrent",
+    "top_promoted": [
+      " Concurrent",
+      "ickt",
+      " ctr",
+      " Kramer",
+      "FirstOrDefault",
+      " grd"
+    ],
+    "top_suppressed": [
+      "isArray",
+      " sharpen",
+      "descricao",
+      " porta",
+      "forum",
+      "dux"
+    ],
+    "label": "→ increase (+0.31); «Concurrent»"
+  },
+  "L19:F33": {
+    "layer": 19,
+    "feature": 33,
+    "target_effect": -1.0637,
+    "pushes": "decrease",
+    "effect_norm": 2.0031,
+    "concept": "below",
+    "top_promoted": [
+      " below",
+      " pit",
+      " plung",
+      " dipping",
+      " plunged",
+      " abaixo"
+    ],
+    "top_suppressed": [
+      " maximizing",
+      "KeyUp",
+      " Up",
+      " zusammen",
+      "isu",
+      " maximize"
+    ],
+    "label": "→ decrease (-1.06); «below»"
+  },
+  "L19:F63": {
+    "layer": 19,
+    "feature": 63,
+    "target_effect": -1.3899,
+    "pushes": "decrease",
+    "effect_norm": 1.8404,
+    "concept": "falling",
+    "top_promoted": [
+      " falling",
+      " fragile",
+      " weakness",
+      " crumbling",
+      " fee",
+      " fallen"
+    ],
+    "top_suppressed": [
+      " hostile",
+      " hostility",
+      " Warm",
+      " eliminar",
+      "lew",
+      "Suppress"
+    ],
+    "label": "→ decrease (-1.39); «falling»"
+  },
+  "L19:F579": {
+    "layer": 19,
+    "feature": 579,
+    "target_effect": 0.4108,
+    "pushes": "increase",
+    "effect_norm": 1.7329,
+    "concept": "propelled",
+    "top_promoted": [
+      " propelled",
+      " summoned",
+      " inspired",
+      " spurred",
+      " encouraged",
+      " instructed"
+    ],
+    "top_suppressed": [
+      "omit",
+      " contributing",
+      " reducing",
+      " providing",
+      " contribution",
+      " violating"
+    ],
+    "label": "→ increase (+0.41); «propelled»"
+  },
+  "L19:F601": {
+    "layer": 19,
+    "feature": 601,
+    "target_effect": 0.4467,
+    "pushes": "increase",
+    "effect_norm": 2.5099,
+    "concept": "langu",
+    "top_promoted": [
+      " langu",
+      " dwind",
+      " dissip",
+      " burge",
+      " endure",
+      " floats"
+    ],
+    "top_suppressed": [
+      " abandon",
+      "replace",
+      " haste",
+      " replaced",
+      " removes",
+      "arus"
+    ],
+    "label": "→ increase (+0.45); «langu»"
+  },
+  "L19:F836": {
+    "layer": 19,
+    "feature": 836,
+    "target_effect": 0.2963,
+    "pushes": "increase",
+    "effect_norm": 1.3612,
+    "concept": "pray",
+    "top_promoted": [
+      "pray",
+      " Students",
+      " vm",
+      " kat",
+      "esthes",
+      " Graduate"
+    ],
+    "top_suppressed": [
+      " tween",
+      " coupe",
+      " pObj",
+      " Interactive",
+      " symb",
+      " shield"
+    ],
+    "label": "→ increase (+0.30); «pray»"
+  },
+  "L19:F932": {
+    "layer": 19,
+    "feature": 932,
+    "target_effect": 0.2667,
+    "pushes": "increase",
+    "effect_norm": 1.3379,
+    "concept": "outbound",
+    "top_promoted": [
+      " outbound",
+      " Outs",
+      " Corporation",
+      " outfile",
+      "ousing",
+      " callers"
+    ],
+    "top_suppressed": [
+      "Fecha",
+      " vigorously",
+      " chmod",
+      " rarely",
+      " frequently",
+      "consin"
+    ],
+    "label": "→ increase (+0.27); «outbound»"
+  },
+  "L19:F1019": {
+    "layer": 19,
+    "feature": 1019,
+    "target_effect": -0.2275,
+    "pushes": "decrease",
+    "effect_norm": 1.4071,
+    "concept": "iseconds",
+    "top_promoted": [
+      "iseconds",
+      "ENSOR",
+      "ASSERT",
+      "ragments",
+      "wdx",
+      "mpz"
+    ],
+    "top_suppressed": [
+      "ube",
+      " addressed",
+      " capt",
+      " captured",
+      " behand",
+      " tackled"
+    ],
+    "label": "→ decrease (-0.23); «iseconds»"
+  },
+  "L19:F1041": {
+    "layer": 19,
+    "feature": 1041,
+    "target_effect": -0.4515,
+    "pushes": "decrease",
+    "effect_norm": 1.232,
+    "concept": "explored",
+    "top_promoted": [
+      " explored",
+      " kadar",
+      " drawers",
+      " recher",
+      " seaside",
+      "ISODE"
+    ],
+    "top_suppressed": [
+      "Apis",
+      " Login",
+      " Hopkins",
+      "ButtonType",
+      "ype",
+      "Stamped"
+    ],
+    "label": "→ decrease (-0.45); «explored»"
+  },
+  "L19:F1094": {
+    "layer": 19,
+    "feature": 1094,
+    "target_effect": -0.2705,
+    "pushes": "decrease",
+    "effect_norm": 1.1724,
+    "concept": "pkt",
+    "top_promoted": [
+      " pkt",
+      " Tome",
+      "UEST",
+      " APPLICATION",
+      " Correct",
+      "pects"
+    ],
+    "top_suppressed": [
+      " Musik",
+      "iselect",
+      "idia",
+      " lingerie",
+      " nylon",
+      " aun"
+    ],
+    "label": "→ decrease (-0.27); «pkt»"
+  },
+  "L19:F1298": {
+    "layer": 19,
+    "feature": 1298,
+    "target_effect": 0.2058,
+    "pushes": "increase",
+    "effect_norm": 1.2924,
+    "concept": "suddenly",
+    "top_promoted": [
+      " suddenly",
+      " abruptly",
+      " Become",
+      " oss",
+      " abrupt",
+      " switching"
+    ],
+    "top_suppressed": [
+      "ByUrl",
+      " Gut",
+      "ghest",
+      " Every",
+      "icro",
+      " caramel"
+    ],
+    "label": "→ increase (+0.21); «suddenly»"
+  },
+  "L19:F1363": {
+    "layer": 19,
+    "feature": 1363,
+    "target_effect": 0.2299,
+    "pushes": "increase",
+    "effect_norm": 1.5121,
+    "concept": "must",
+    "top_promoted": [
+      "must",
+      " NEED",
+      " needing",
+      " needs",
+      " necessity",
+      " gotta"
+    ],
+    "top_suppressed": [
+      " appears",
+      " appeared",
+      " Boy",
+      " Manhattan",
+      "itos",
+      " satisfies"
+    ],
+    "label": "→ increase (+0.23); «must»"
+  },
+  "L19:F1560": {
+    "layer": 19,
+    "feature": 1560,
+    "target_effect": 0.4341,
+    "pushes": "increase",
+    "effect_norm": 1.9255,
+    "concept": "hefty",
+    "top_promoted": [
+      " hefty",
+      " bonds",
+      "elper",
+      "Mon",
+      " coins",
+      " Lei"
+    ],
+    "top_suppressed": [
+      "amientos",
+      " knees",
+      "inh",
+      " inbox",
+      "amiento",
+      "ymax"
+    ],
+    "label": "→ increase (+0.43); «hefty»"
+  },
+  "L19:F1568": {
+    "layer": 19,
+    "feature": 1568,
+    "target_effect": 0.333,
+    "pushes": "increase",
+    "effect_norm": 1.8722,
+    "concept": "surpassed",
+    "top_promoted": [
+      " surpassed",
+      " eclipse",
+      "overrides",
+      " eclips",
+      " surpass",
+      " exceeded"
+    ],
+    "top_suppressed": [
+      " prone",
+      "asurable",
+      "pecting",
+      " scoring",
+      " Creating",
+      "eatures"
+    ],
+    "label": "→ increase (+0.33); «surpassed»"
+  },
+  "L19:F1577": {
+    "layer": 19,
+    "feature": 1577,
+    "target_effect": 0.5133,
+    "pushes": "increase",
+    "effect_norm": 1.1126,
+    "concept": "sheet",
+    "top_promoted": [
+      " sheet",
+      " TERM",
+      " tb",
+      " positively",
+      " negatively",
+      " sheets"
+    ],
+    "top_suppressed": [
+      " besoin",
+      "icens",
+      " graveyard",
+      "omed",
+      "ockets",
+      "Utilities"
+    ],
+    "label": "→ increase (+0.51); «sheet»"
+  },
+  "L19:F1620": {
+    "layer": 19,
+    "feature": 1620,
+    "target_effect": -0.5306,
+    "pushes": "decrease",
+    "effect_norm": 1.6124,
+    "concept": "focus",
+    "top_promoted": [
+      " focus",
+      "\tZEPHIR",
+      " discussed",
+      " intends",
+      " discusses",
+      " follow"
+    ],
+    "top_suppressed": [
+      "stdout",
+      "Scheduler",
+      "Directive",
+      " Bare",
+      " argv",
+      " DispatchQueue"
+    ],
+    "label": "→ decrease (-0.53); «focus»"
+  },
+  "L19:F1626": {
+    "layer": 19,
+    "feature": 1626,
+    "target_effect": 0.6271,
+    "pushes": "increase",
+    "effect_norm": 1.5596,
+    "concept": "increasing",
+    "top_promoted": [
+      " increasing",
+      " decreasing",
+      " escalating",
+      " growing",
+      " declining",
+      " grows"
+    ],
+    "top_suppressed": [
+      "otti",
+      "uzu",
+      " messed",
+      " Huff",
+      "Detalle",
+      "yeah"
+    ],
+    "label": "→ increase (+0.63); «increasing»"
+  },
+  "L19:F1734": {
+    "layer": 19,
+    "feature": 1734,
+    "target_effect": -0.2924,
+    "pushes": "decrease",
+    "effect_norm": 1.4018,
+    "concept": "movable",
+    "top_promoted": [
+      " movable",
+      "Links",
+      " relocate",
+      "argas",
+      " relocated",
+      " svensk"
+    ],
+    "top_suppressed": [
+      "assert",
+      "der",
+      " In",
+      " disappoint",
+      " exert",
+      "Advanced"
+    ],
+    "label": "→ decrease (-0.29); «movable»"
+  },
+  "L19:F1769": {
+    "layer": 19,
+    "feature": 1769,
+    "target_effect": -0.5556,
+    "pushes": "decrease",
+    "effect_norm": 1.6992,
+    "concept": "departed",
+    "top_promoted": [
+      " departed",
+      " violated",
+      " invoking",
+      " invoked",
+      " violate",
+      " violating"
+    ],
+    "top_suppressed": [
+      " Measures",
+      " Powered",
+      " Unlike",
+      "emale",
+      " Apartments",
+      " Apartment"
+    ],
+    "label": "→ decrease (-0.56); «departed»"
+  },
+  "L20:F235": {
+    "layer": 20,
+    "feature": 235,
+    "target_effect": 0.2909,
+    "pushes": "increase",
+    "effect_norm": 1.1153,
+    "concept": "Metodo",
+    "top_promoted": [
+      " Metodo",
+      "Numero",
+      " Gene",
+      "\tResource",
+      " Geometry",
+      "\tSize"
+    ],
+    "top_suppressed": [
+      " fusion",
+      " flawed",
+      "Then",
+      " spiritual",
+      "This",
+      " inaugural"
+    ],
+    "label": "→ increase (+0.29); «Metodo»"
+  },
+  "L20:F271": {
+    "layer": 20,
+    "feature": 271,
+    "target_effect": 0.315,
+    "pushes": "increase",
+    "effect_norm": 1.1924,
+    "concept": "VALID",
+    "top_promoted": [
+      "VALID",
+      "utt",
+      " greens",
+      " Venom",
+      " aval",
+      "Keith"
+    ],
+    "top_suppressed": [
+      "cls",
+      " posing",
+      " suites",
+      "odor",
+      "Twenty",
+      " beh"
+    ],
+    "label": "→ increase (+0.31); «VALID»"
+  },
+  "L20:F490": {
+    "layer": 20,
+    "feature": 490,
+    "target_effect": 0.4762,
+    "pushes": "increase",
+    "effect_norm": 1.8743,
+    "concept": "StatusBar",
+    "top_promoted": [
+      " StatusBar",
+      " refined",
+      " staple",
+      " petrol",
+      " imported",
+      " gasoline"
+    ],
+    "top_suppressed": [
+      "Testing",
+      " homosexuality",
+      " homosexual",
+      " baptism",
+      "TestMethod",
+      " Tiles"
+    ],
+    "label": "→ increase (+0.48); «StatusBar»"
+  },
+  "L20:F541": {
+    "layer": 20,
+    "feature": 541,
+    "target_effect": 0.5713,
+    "pushes": "increase",
+    "effect_norm": 1.6285,
+    "concept": "rises",
+    "top_promoted": [
+      " rises",
+      " rise",
+      " hike",
+      " climbed",
+      "HB",
+      "usercontent"
+    ],
+    "top_suppressed": [
+      "WSTR",
+      " registers",
+      " garbage",
+      " transformed",
+      "produk",
+      " perish"
+    ],
+    "label": "→ increase (+0.57); «rises»"
+  },
+  "L20:F661": {
+    "layer": 20,
+    "feature": 661,
+    "target_effect": 0.3008,
+    "pushes": "increase",
+    "effect_norm": 1.1026,
+    "concept": "Smith",
+    "top_promoted": [
+      "Smith",
+      " Kelvin",
+      "rops",
+      " contract",
+      " Remarks",
+      " luck"
+    ],
+    "top_suppressed": [
+      "isFunction",
+      " comma",
+      "orc",
+      " flere",
+      " fenced",
+      "ollower"
+    ],
+    "label": "→ increase (+0.30); «Smith»"
+  },
+  "L20:F725": {
+    "layer": 20,
+    "feature": 725,
+    "target_effect": 0.2771,
+    "pushes": "increase",
+    "effect_norm": 1.1316,
+    "concept": "inside",
+    "top_promoted": [
+      "inside",
+      " QUEUE",
+      " packs",
+      " PACK",
+      " packets",
+      " queued"
+    ],
+    "top_suppressed": [
+      "argout",
+      "emer",
+      "chartInstance",
+      "ifikasi",
+      " UFO",
+      " Nashville"
+    ],
+    "label": "→ increase (+0.28); «inside»"
+  },
+  "L20:F863": {
+    "layer": 20,
+    "feature": 863,
+    "target_effect": 0.4791,
+    "pushes": "increase",
+    "effect_norm": 1.8368,
+    "concept": "exploded",
+    "top_promoted": [
+      " exploded",
+      " eb",
+      " boiled",
+      "surface",
+      " Surge",
+      " dw"
+    ],
+    "top_suppressed": [
+      "implements",
+      " tote",
+      " stellen",
+      " implement",
+      "mony",
+      " frameborder"
+    ],
+    "label": "→ increase (+0.48); «exploded»"
+  },
+  "L20:F1007": {
+    "layer": 20,
+    "feature": 1007,
+    "target_effect": -0.2986,
+    "pushes": "decrease",
+    "effect_norm": 1.1104,
+    "concept": "ecret",
+    "top_promoted": [
+      "ecret",
+      "Apis",
+      "Keeper",
+      "ipers",
+      " QUEST",
+      " Tmax"
+    ],
+    "top_suppressed": [
+      "adow",
+      "Animated",
+      " causing",
+      "inde",
+      " causes",
+      " intimidated"
+    ],
+    "label": "→ decrease (-0.30); «ecret»"
+  },
+  "L20:F1214": {
+    "layer": 20,
+    "feature": 1214,
+    "target_effect": 0.2636,
+    "pushes": "increase",
+    "effect_norm": 1.0167,
+    "concept": "ascii",
+    "top_promoted": [
+      " ascii",
+      "Parsing",
+      " butcher",
+      " Parser",
+      " indexer",
+      " typealias"
+    ],
+    "top_suppressed": [
+      " Return",
+      " normals",
+      " safeguards",
+      "returnValue",
+      " ALL",
+      " supervision"
+    ],
+    "label": "→ increase (+0.26); «ascii»"
+  },
+  "L20:F1298": {
+    "layer": 20,
+    "feature": 1298,
+    "target_effect": -0.4761,
+    "pushes": "decrease",
+    "effect_norm": 1.3938,
+    "concept": "dissolve",
+    "top_promoted": [
+      " dissolve",
+      " dissolution",
+      " reduction",
+      " evapor",
+      " reductions",
+      " disappearance"
+    ],
+    "top_suppressed": [
+      " NXT",
+      " UNICODE",
+      "IGGER",
+      " Leap",
+      " Initialization",
+      " startActivityForResult"
+    ],
+    "label": "→ decrease (-0.48); «dissolve»"
+  },
+  "L20:F1352": {
+    "layer": 20,
+    "feature": 1352,
+    "target_effect": -0.3525,
+    "pushes": "decrease",
+    "effect_norm": 1.3178,
+    "concept": "ypos",
+    "top_promoted": [
+      " ypos",
+      " blasts",
+      "rysler",
+      " dokument",
+      "slideDown",
+      " blast"
+    ],
+    "top_suppressed": [
+      " refreshed",
+      " monitored",
+      " created",
+      " secured",
+      " governed",
+      " established"
+    ],
+    "label": "→ decrease (-0.35); «ypos»"
+  },
+  "L20:F1397": {
+    "layer": 20,
+    "feature": 1397,
+    "target_effect": -0.3264,
+    "pushes": "decrease",
+    "effect_norm": 1.3974,
+    "concept": "outs",
+    "top_promoted": [
+      " outs",
+      " deficiencies",
+      " spear",
+      "official",
+      " dog",
+      " Nexus"
+    ],
+    "top_suppressed": [
+      "ylation",
+      " reuse",
+      " stripping",
+      "dling",
+      "floating",
+      "project"
+    ],
+    "label": "→ decrease (-0.33); «outs»"
+  },
+  "L20:F1411": {
+    "layer": 20,
+    "feature": 1411,
+    "target_effect": -0.4401,
+    "pushes": "decrease",
+    "effect_norm": 1.7381,
+    "concept": "ORDER",
+    "top_promoted": [
+      "ORDER",
+      "ordered",
+      "ord",
+      " wholes",
+      " Supplier",
+      " kit"
+    ],
+    "top_suppressed": [
+      " Banco",
+      " Vocal",
+      "AccessType",
+      "agli",
+      "terra",
+      " cents"
+    ],
+    "label": "→ decrease (-0.44); «ORDER»"
+  },
+  "L20:F1423": {
+    "layer": 20,
+    "feature": 1423,
+    "target_effect": 0.1604,
+    "pushes": "increase",
+    "effect_norm": 1.3023,
+    "concept": "dollars",
+    "top_promoted": [
+      " dollars",
+      " money",
+      " cents",
+      " payments",
+      "Payment",
+      " USD"
+    ],
+    "top_suppressed": [
+      " Light",
+      "ummings",
+      "PDOException",
+      " FW",
+      " adb",
+      " domest"
+    ],
+    "label": "→ increase (+0.16); «dollars»"
+  },
+  "L20:F1445": {
+    "layer": 20,
+    "feature": 1445,
+    "target_effect": 0.4015,
+    "pushes": "increase",
+    "effect_norm": 1.4151,
+    "concept": "high",
+    "top_promoted": [
+      " high",
+      " elevated",
+      " rises",
+      " higher",
+      " soaring",
+      " climbing"
+    ],
+    "top_suppressed": [
+      "Len",
+      " Older",
+      " Less",
+      " Duration",
+      " Ancient",
+      " overwrite"
+    ],
+    "label": "→ increase (+0.40); «high»"
+  },
+  "L20:F1752": {
+    "layer": 20,
+    "feature": 1752,
+    "target_effect": -0.371,
+    "pushes": "decrease",
+    "effect_norm": 1.0867,
+    "concept": "arbonate",
+    "top_promoted": [
+      "arbonate",
+      "setEnabled",
+      "Collector",
+      " caption",
+      "ethoven",
+      " marque"
+    ],
+    "top_suppressed": [
+      " wxDefault",
+      "girls",
+      " youths",
+      " UserModel",
+      " probing",
+      "\tserver"
+    ],
+    "label": "→ decrease (-0.37); «arbonate»"
+  },
+  "L20:F1975": {
+    "layer": 20,
+    "feature": 1975,
+    "target_effect": -0.5013,
+    "pushes": "decrease",
+    "effect_norm": 1.7954,
+    "concept": "declines",
+    "top_promoted": [
+      " declines",
+      " Slo",
+      " tumble",
+      " slide",
+      " plummet",
+      " decline"
+    ],
+    "top_suppressed": [
+      "Replacing",
+      " secured",
+      "agnosis",
+      "uster",
+      " transferred",
+      " replaced"
+    ],
+    "label": "→ decrease (-0.50); «declines»"
+  },
+  "L21:F51": {
+    "layer": 21,
+    "feature": 51,
+    "target_effect": 0.3022,
+    "pushes": "increase",
+    "effect_norm": 1.0391,
+    "concept": "Assass",
+    "top_promoted": [
+      " Assass",
+      " beneficiation",
+      "moid",
+      " degradation",
+      " metast",
+      " sl"
+    ],
+    "top_suppressed": [
+      "toFixed",
+      "vari",
+      " admire",
+      "pairs",
+      " fleet",
+      " FOUR"
+    ],
+    "label": "→ increase (+0.30); «Assass»"
+  },
+  "L21:F84": {
+    "layer": 21,
+    "feature": 84,
+    "target_effect": 0.4295,
+    "pushes": "increase",
+    "effect_norm": 1.1426,
+    "concept": "Platform",
+    "top_promoted": [
+      "Platform",
+      "enze",
+      " homage",
+      " volcano",
+      "Body",
+      "GRP"
+    ],
+    "top_suppressed": [
+      " theft",
+      " Tap",
+      "uos",
+      " exe",
+      " JButton",
+      " Chap"
+    ],
+    "label": "→ increase (+0.43); «Platform»"
+  },
+  "L21:F205": {
+    "layer": 21,
+    "feature": 205,
+    "target_effect": 0.2805,
+    "pushes": "increase",
+    "effect_norm": 1.0829,
+    "concept": "Yosh",
+    "top_promoted": [
+      " Yosh",
+      "RPC",
+      "art",
+      "sticks",
+      " distortion",
+      "blers"
+    ],
+    "top_suppressed": [
+      "ramework",
+      " Weg",
+      " geographic",
+      "ebb",
+      "mdir",
+      "Intel"
+    ],
+    "label": "→ increase (+0.28); «Yosh»"
+  },
+  "L21:F221": {
+    "layer": 21,
+    "feature": 221,
+    "target_effect": -0.3893,
+    "pushes": "decrease",
+    "effect_norm": 1.1424,
+    "concept": "langs",
+    "top_promoted": [
+      " langs",
+      " Pregn",
+      "xbe",
+      " Provision",
+      "isNull",
+      "dsa"
+    ],
+    "top_suppressed": [
+      " molest",
+      "Fecha",
+      "estro",
+      " ruled",
+      "Obs",
+      " OVERRIDE"
+    ],
+    "label": "→ decrease (-0.39); «langs»"
+  },
+  "L21:F249": {
+    "layer": 21,
+    "feature": 249,
+    "target_effect": -0.3525,
+    "pushes": "decrease",
+    "effect_norm": 1.264,
+    "concept": "tick",
+    "top_promoted": [
+      " tick",
+      "IconButton",
+      "onChange",
+      "persistent",
+      "Marc",
+      "onomy"
+    ],
+    "top_suppressed": [
+      " totalPrice",
+      "ais",
+      "usters",
+      " Summit",
+      " AVL",
+      " fellowship"
+    ],
+    "label": "→ decrease (-0.35); «tick»"
+  },
+  "L21:F262": {
+    "layer": 21,
+    "feature": 262,
+    "target_effect": 0.2731,
+    "pushes": "increase",
+    "effect_norm": 0.978,
+    "concept": "asurement",
+    "top_promoted": [
+      "asurement",
+      " Fried",
+      "uplicated",
+      "ToOne",
+      "ampp",
+      "ufact"
+    ],
+    "top_suppressed": [
+      " STOP",
+      " glyphs",
+      " Maver",
+      " stealth",
+      " conversations",
+      " canActivate"
+    ],
+    "label": "→ increase (+0.27); «asurement»"
+  },
+  "L21:F603": {
+    "layer": 21,
+    "feature": 603,
+    "target_effect": -0.3548,
+    "pushes": "decrease",
+    "effect_norm": 1.2791,
+    "concept": "circum",
+    "top_promoted": [
+      " circum",
+      " Cir",
+      "algorithm",
+      " Codes",
+      " algorithms",
+      " Vern"
+    ],
+    "top_suppressed": [
+      "ild",
+      " PostgreSQL",
+      " GridLayout",
+      "cuda",
+      "Ep",
+      " showAlert"
+    ],
+    "label": "→ decrease (-0.35); «circum»"
+  },
+  "L21:F756": {
+    "layer": 21,
+    "feature": 756,
+    "target_effect": -0.2496,
+    "pushes": "decrease",
+    "effect_norm": 1.1587,
+    "concept": "rapes",
+    "top_promoted": [
+      " rapes",
+      "CLLocation",
+      "becca",
+      "Deque",
+      " prestigious",
+      "NSNumber"
+    ],
+    "top_suppressed": [
+      "CodeAt",
+      "asured",
+      "anos",
+      " Marvel",
+      "lining",
+      "ZONE"
+    ],
+    "label": "→ decrease (-0.25); «rapes»"
+  },
+  "L21:F851": {
+    "layer": 21,
+    "feature": 851,
+    "target_effect": 0.1733,
+    "pushes": "increase",
+    "effect_norm": 0.9915,
+    "concept": "stri",
+    "top_promoted": [
+      "stri",
+      " king",
+      "acing",
+      "INU",
+      " reconc",
+      " MOV"
+    ],
+    "top_suppressed": [
+      "wine",
+      " Furn",
+      " espresso",
+      "APIView",
+      "weed",
+      " Nur"
+    ],
+    "label": "→ increase (+0.17); «stri»"
+  },
+  "L21:F1121": {
+    "layer": 21,
+    "feature": 1121,
+    "target_effect": -0.3987,
+    "pushes": "decrease",
+    "effect_norm": 1.0161,
+    "concept": "tic",
+    "top_promoted": [
+      " tic",
+      " fName",
+      "kick",
+      " alertDialog",
+      "reaction",
+      "PostBack"
+    ],
+    "top_suppressed": [
+      "Offset",
+      "separator",
+      "itted",
+      " Lehr",
+      "otion",
+      " pca"
+    ],
+    "label": "→ decrease (-0.40); «tic»"
+  },
+  "L21:F1173": {
+    "layer": 21,
+    "feature": 1173,
+    "target_effect": -0.3056,
+    "pushes": "decrease",
+    "effect_norm": 0.9762,
+    "concept": "pun",
+    "top_promoted": [
+      " pun",
+      "earable",
+      " Loading",
+      " Boiler",
+      " Fine",
+      " detox"
+    ],
+    "top_suppressed": [
+      " reproduce",
+      "opened",
+      " tracked",
+      "st",
+      "GG",
+      "scan"
+    ],
+    "label": "→ decrease (-0.31); «pun»"
+  },
+  "L21:F1310": {
+    "layer": 21,
+    "feature": 1310,
+    "target_effect": 0.1936,
+    "pushes": "increase",
+    "effect_norm": 1.113,
+    "concept": "ez",
+    "top_promoted": [
+      "ez",
+      "efa",
+      "educt",
+      " incompet",
+      " Firearms",
+      "eam"
+    ],
+    "top_suppressed": [
+      "RUN",
+      " runs",
+      " novembre",
+      "Unchecked",
+      "Random",
+      " Harness"
+    ],
+    "label": "→ increase (+0.19); «ez»"
+  },
+  "L21:F1497": {
+    "layer": 21,
+    "feature": 1497,
+    "target_effect": -0.295,
+    "pushes": "decrease",
+    "effect_norm": 1.2316,
+    "concept": "Tacoma",
+    "top_promoted": [
+      " Tacoma",
+      " vapor",
+      "ashtra",
+      "FindObject",
+      " Multimedia",
+      "liche"
+    ],
+    "top_suppressed": [
+      "received",
+      " Receive",
+      " recieved",
+      " Iv",
+      " integr",
+      " kB"
+    ],
+    "label": "→ decrease (-0.29); «Tacoma»"
+  },
+  "L21:F1652": {
+    "layer": 21,
+    "feature": 1652,
+    "target_effect": -0.2498,
+    "pushes": "decrease",
+    "effect_norm": 0.9582,
+    "concept": "VK",
+    "top_promoted": [
+      " VK",
+      " Master",
+      "Adapter",
+      " Credit",
+      " decomposition",
+      "clock"
+    ],
+    "top_suppressed": [
+      " bullish",
+      " beaches",
+      " wygl",
+      " Beach",
+      " upbeat",
+      " seas"
+    ],
+    "label": "→ decrease (-0.25); «VK»"
+  },
+  "L21:F1689": {
+    "layer": 21,
+    "feature": 1689,
+    "target_effect": 0.2475,
+    "pushes": "increase",
+    "effect_norm": 0.994,
+    "concept": "cherche",
+    "top_promoted": [
+      "cherche",
+      "shire",
+      " NRL",
+      " cler",
+      "lesc",
+      "qs"
+    ],
+    "top_suppressed": [
+      " Cortex",
+      "baseUrl",
+      " ConcurrentHashMap",
+      "Ak",
+      " Olympia",
+      " Ingram"
+    ],
+    "label": "→ increase (+0.25); «cherche»"
+  },
+  "L21:F1800": {
+    "layer": 21,
+    "feature": 1800,
+    "target_effect": -0.3295,
+    "pushes": "decrease",
+    "effect_norm": 1.329,
+    "concept": "agment",
+    "top_promoted": [
+      "agment",
+      "EMENT",
+      "ossed",
+      "agt",
+      " dj",
+      "artifact"
+    ],
+    "top_suppressed": [
+      " Hezbollah",
+      " Psychological",
+      " porta",
+      " prostate",
+      " paz",
+      " bicycle"
+    ],
+    "label": "→ decrease (-0.33); «agment»"
+  },
+  "L21:F1967": {
+    "layer": 21,
+    "feature": 1967,
+    "target_effect": 0.3817,
+    "pushes": "increase",
+    "effect_norm": 1.0186,
+    "concept": "mousedown",
+    "top_promoted": [
+      "mousedown",
+      "ListComponent",
+      "kd",
+      " stalking",
+      " sided",
+      " srv"
+    ],
+    "top_suppressed": [
+      "phant",
+      " dealloc",
+      " TIMER",
+      "prit",
+      " uintptr",
+      "otions"
+    ],
+    "label": "→ increase (+0.38); «mousedown»"
+  },
+  "L21:F2030": {
+    "layer": 21,
+    "feature": 2030,
+    "target_effect": 0.348,
+    "pushes": "increase",
+    "effect_norm": 1.1235,
+    "concept": "MP",
+    "top_promoted": [
+      " MP",
+      " MLM",
+      " MG",
+      " JT",
+      " Bernie",
+      " Scotch"
+    ],
+    "top_suppressed": [
+      "Central",
+      " card",
+      "bor",
+      " Floating",
+      " flies",
+      " action"
+    ],
+    "label": "→ increase (+0.35); «MP»"
+  },
+  "L21:F2038": {
+    "layer": 21,
+    "feature": 2038,
+    "target_effect": -0.2672,
+    "pushes": "decrease",
+    "effect_norm": 1.2268,
+    "concept": "thritis",
+    "top_promoted": [
+      "thritis",
+      " apellido",
+      "atetime",
+      "JSGlobal",
+      "perial",
+      "achi"
+    ],
+    "top_suppressed": [
+      "Draft",
+      " deliberate",
+      " folding",
+      "Ho",
+      " supplemental",
+      " inclination"
+    ],
+    "label": "→ decrease (-0.27); «thritis»"
+  },
+  "L22:F350": {
+    "layer": 22,
+    "feature": 350,
+    "target_effect": -0.2004,
+    "pushes": "decrease",
+    "effect_norm": 0.7854,
+    "concept": "?",
+    "top_promoted": [
+      " Lisbon",
+      " euro",
+      "KP",
+      "Italy",
+      " euros",
+      " Greece"
+    ],
+    "top_suppressed": [
+      " Erick",
+      " Polly",
+      "ograms",
+      "getResource",
+      "getService",
+      " Amar"
+    ],
+    "label": "→ decrease (-0.20)"
+  },
+  "L22:F393": {
+    "layer": 22,
+    "feature": 393,
+    "target_effect": -0.4766,
+    "pushes": "decrease",
+    "effect_norm": 0.9357,
+    "concept": "Punch",
+    "top_promoted": [
+      " Punch",
+      " Sent",
+      " straw",
+      " inserted",
+      " Crack",
+      " McM"
+    ],
+    "top_suppressed": [
+      "East",
+      "VIDIA",
+      "ateway",
+      " userInfo",
+      "CUS",
+      " ark"
+    ],
+    "label": "→ decrease (-0.48); «Punch»"
+  },
+  "L22:F525": {
+    "layer": 22,
+    "feature": 525,
+    "target_effect": 0.1254,
+    "pushes": "increase",
+    "effect_norm": 0.924,
+    "concept": "Tantra",
+    "top_promoted": [
+      " Tantra",
+      "Plugin",
+      "vette",
+      "ect",
+      "ousse",
+      " texture"
+    ],
+    "top_suppressed": [
+      " diving",
+      " calming",
+      " insulting",
+      " sailing",
+      " cheering",
+      " publishing"
+    ],
+    "label": "→ increase (+0.13); «Tantra»"
+  },
+  "L22:F708": {
+    "layer": 22,
+    "feature": 708,
+    "target_effect": -0.2921,
+    "pushes": "decrease",
+    "effect_norm": 0.9142,
+    "concept": "UIAlertAction",
+    "top_promoted": [
+      "UIAlertAction",
+      "coh",
+      "CALL",
+      " dado",
+      " memberId",
+      "INS"
+    ],
+    "top_suppressed": [
+      " GAS",
+      " scept",
+      " Professional",
+      "itives",
+      "Hy",
+      " Yun"
+    ],
+    "label": "→ decrease (-0.29); «UIAlertAction»"
+  },
+  "L22:F737": {
+    "layer": 22,
+    "feature": 737,
+    "target_effect": 0.1888,
+    "pushes": "increase",
+    "effect_norm": 0.8352,
+    "concept": "?",
+    "top_promoted": [
+      " amps",
+      " beads",
+      " bead",
+      " Am",
+      " Stir",
+      " MP"
+    ],
+    "top_suppressed": [
+      "Library",
+      " Jedi",
+      " dare",
+      "lib",
+      "act",
+      " Faker"
+    ],
+    "label": "→ increase (+0.19)"
+  },
+  "L22:F740": {
+    "layer": 22,
+    "feature": 740,
+    "target_effect": -0.2179,
+    "pushes": "decrease",
+    "effect_norm": 0.8516,
+    "concept": "?",
+    "top_promoted": [
+      "culture",
+      "colour",
+      "Spi",
+      "ANTS",
+      "PLAN",
+      "profil"
+    ],
+    "top_suppressed": [
+      " Moses",
+      " radios",
+      " Kansas",
+      " Euler",
+      "odie",
+      "Digits"
+    ],
+    "label": "→ decrease (-0.22)"
+  },
+  "L22:F763": {
+    "layer": 22,
+    "feature": 763,
+    "target_effect": -0.324,
+    "pushes": "decrease",
+    "effect_norm": 0.8585,
+    "concept": "?",
+    "top_promoted": [
+      " eased",
+      "toy",
+      "instr",
+      " outskirts",
+      "Timestamp",
+      "LAT"
+    ],
+    "top_suppressed": [
+      " Field",
+      " RD",
+      "getField",
+      "fields",
+      " FOX",
+      " DVR"
+    ],
+    "label": "→ decrease (-0.32)"
+  },
+  "L22:F777": {
+    "layer": 22,
+    "feature": 777,
+    "target_effect": 0.2444,
+    "pushes": "increase",
+    "effect_norm": 0.8219,
+    "concept": "?",
+    "top_promoted": [
+      " Logical",
+      " Nightmare",
+      " Bayern",
+      "ologist",
+      "sea",
+      " GOOD"
+    ],
+    "top_suppressed": [
+      "modele",
+      "leftright",
+      "reminder",
+      " rowData",
+      "moduleName",
+      "itemid"
+    ],
+    "label": "→ increase (+0.24)"
+  },
+  "L22:F925": {
+    "layer": 22,
+    "feature": 925,
+    "target_effect": 0.3442,
+    "pushes": "increase",
+    "effect_norm": 0.8647,
+    "concept": "?",
+    "top_promoted": [
+      " hem",
+      "NJ",
+      " skept",
+      "erals",
+      " continental",
+      "avadoc"
+    ],
+    "top_suppressed": [
+      " Cast",
+      "WithOptions",
+      " Crime",
+      "Slug",
+      " casts",
+      " Cognitive"
+    ],
+    "label": "→ increase (+0.34)"
+  },
+  "L22:F954": {
+    "layer": 22,
+    "feature": 954,
+    "target_effect": -0.4353,
+    "pushes": "decrease",
+    "effect_norm": 1.2448,
+    "concept": "aeda",
+    "top_promoted": [
+      "aeda",
+      " falling",
+      " fall",
+      " falls",
+      " Dean",
+      "uspended"
+    ],
+    "top_suppressed": [
+      "Britain",
+      "British",
+      " connectors",
+      " Brexit",
+      " Brit",
+      " GBP"
+    ],
+    "label": "→ decrease (-0.44); «aeda»"
+  },
+  "L22:F973": {
+    "layer": 22,
+    "feature": 973,
+    "target_effect": 0.2896,
+    "pushes": "increase",
+    "effect_norm": 0.8088,
+    "concept": "?",
+    "top_promoted": [
+      " Fle",
+      "ACE",
+      "PerPixel",
+      " utilis",
+      "olem",
+      "imed"
+    ],
+    "top_suppressed": [
+      " sqlSession",
+      " pts",
+      " Addison",
+      " CI",
+      " sut",
+      " scrollView"
+    ],
+    "label": "→ increase (+0.29)"
+  },
+  "L22:F984": {
+    "layer": 22,
+    "feature": 984,
+    "target_effect": 0.1796,
+    "pushes": "increase",
+    "effect_norm": 0.8056,
+    "concept": "?",
+    "top_promoted": [
+      "etine",
+      " ActionController",
+      " RESET",
+      "timeofday",
+      "reduce",
+      "ListItem"
+    ],
+    "top_suppressed": [
+      " coordinating",
+      " appeals",
+      " orchestra",
+      " audio",
+      " engineers",
+      " ads"
+    ],
+    "label": "→ increase (+0.18)"
+  },
+  "L22:F1051": {
+    "layer": 22,
+    "feature": 1051,
+    "target_effect": 0.3063,
+    "pushes": "increase",
+    "effect_norm": 0.8282,
+    "concept": "?",
+    "top_promoted": [
+      " mga",
+      " Php",
+      " mysql",
+      "Validators",
+      " Philippine",
+      " UAE"
+    ],
+    "top_suppressed": [
+      " discrepan",
+      " Stuttgart",
+      " Leipzig",
+      "Steven",
+      "Ak",
+      "Dave"
+    ],
+    "label": "→ increase (+0.31)"
+  },
+  "L22:F1113": {
+    "layer": 22,
+    "feature": 1113,
+    "target_effect": 0.1951,
+    "pushes": "increase",
+    "effect_norm": 0.8346,
+    "concept": "?",
+    "top_promoted": [
+      " Astro",
+      " UIControl",
+      " COMPONENT",
+      " ActivityCompat",
+      " qreal",
+      "UIButton"
+    ],
+    "top_suppressed": [
+      " LW",
+      " RD",
+      "DD",
+      " BLACK",
+      " WD",
+      "DW"
+    ],
+    "label": "→ increase (+0.20)"
+  },
+  "L22:F1328": {
+    "layer": 22,
+    "feature": 1328,
+    "target_effect": 0.2642,
+    "pushes": "increase",
+    "effect_norm": 0.8636,
+    "concept": "?",
+    "top_promoted": [
+      " livestock",
+      "svc",
+      " veterinary",
+      " scn",
+      " Beverage",
+      " readable"
+    ],
+    "top_suppressed": [
+      " Kabul",
+      " Mines",
+      "\tNamespace",
+      " Islamabad",
+      " Pakistan",
+      " Pakistani"
+    ],
+    "label": "→ increase (+0.26)"
+  },
+  "L22:F1778": {
+    "layer": 22,
+    "feature": 1778,
+    "target_effect": 0.3135,
+    "pushes": "increase",
+    "effect_norm": 0.9623,
+    "concept": "Rene",
+    "top_promoted": [
+      " Rene",
+      "erro",
+      " CHE",
+      " triples",
+      " Vatican",
+      "Pairs"
+    ],
+    "top_suppressed": [
+      "lineEdit",
+      " BrowserModule",
+      " RelayCommand",
+      "athon",
+      " regimen",
+      " xbmc"
+    ],
+    "label": "→ increase (+0.31); «Rene»"
+  },
+  "L22:F1904": {
+    "layer": 22,
+    "feature": 1904,
+    "target_effect": -0.1835,
+    "pushes": "decrease",
+    "effect_norm": 1.0736,
+    "concept": "ells",
+    "top_promoted": [
+      "ells",
+      " polygon",
+      " UITableView",
+      " JavaScript",
+      " vaginal",
+      " servlet"
+    ],
+    "top_suppressed": [
+      " employees",
+      "people",
+      " researchers",
+      " developers",
+      " persons",
+      " users"
+    ],
+    "label": "→ decrease (-0.18); «ells»"
+  },
+  "L22:F1970": {
+    "layer": 22,
+    "feature": 1970,
+    "target_effect": -0.2824,
+    "pushes": "decrease",
+    "effect_norm": 0.818,
+    "concept": "?",
+    "top_promoted": [
+      "errorMsg",
+      "bdb",
+      "dataArray",
+      "roker",
+      "errMsg",
+      "jsonData"
+    ],
+    "top_suppressed": [
+      " Fate",
+      " Dante",
+      " Geh",
+      " Worcester",
+      " Rare",
+      " Jaime"
+    ],
+    "label": "→ decrease (-0.28)"
+  },
+  "L23:F2": {
+    "layer": 23,
+    "feature": 2,
+    "target_effect": 0.18,
+    "pushes": "increase",
+    "effect_norm": 0.7199,
+    "concept": "?",
+    "top_promoted": [
+      " utilizes",
+      " racked",
+      " outputStream",
+      " excerpt",
+      " reloadData",
+      " invalidated"
+    ],
+    "top_suppressed": [
+      " Pink",
+      "Locations",
+      " Christians",
+      " City",
+      " Hopkins",
+      "sessions"
+    ],
+    "label": "→ increase (+0.18)"
+  },
+  "L23:F72": {
+    "layer": 23,
+    "feature": 72,
+    "target_effect": -0.141,
+    "pushes": "decrease",
+    "effect_norm": 0.7245,
+    "concept": "?",
+    "top_promoted": [
+      " Horse",
+      "iseconds",
+      "IH",
+      "imei",
+      "shit",
+      "shake"
+    ],
+    "top_suppressed": [
+      " Jean",
+      " argent",
+      " metallic",
+      "James",
+      " Alfred",
+      " Clarke"
+    ],
+    "label": "→ decrease (-0.14)"
+  },
+  "L23:F118": {
+    "layer": 23,
+    "feature": 118,
+    "target_effect": -0.1103,
+    "pushes": "decrease",
+    "effect_norm": 0.6412,
+    "concept": "?",
+    "top_promoted": [
+      "pite",
+      " Zone",
+      " AnyObject",
+      " bolster",
+      "ains",
+      "entials"
+    ],
+    "top_suppressed": [
+      " kat",
+      " enslaved",
+      " Pregn",
+      " mM",
+      " Psychiatry",
+      " gast"
+    ],
+    "label": "→ decrease (-0.11)"
+  },
+  "L23:F333": {
+    "layer": 23,
+    "feature": 333,
+    "target_effect": -0.1389,
+    "pushes": "decrease",
+    "effect_norm": 0.6974,
+    "concept": "?",
+    "top_promoted": [
+      " endorsing",
+      " repairing",
+      " Consum",
+      " suppressing",
+      " powsta",
+      " burge"
+    ],
+    "top_suppressed": [
+      " lcd",
+      " bishop",
+      " emulator",
+      " actor",
+      "Mother",
+      " cmd"
+    ],
+    "label": "→ decrease (-0.14)"
+  },
+  "L23:F346": {
+    "layer": 23,
+    "feature": 346,
+    "target_effect": 0.1087,
+    "pushes": "increase",
+    "effect_norm": 0.5581,
+    "concept": "?",
+    "top_promoted": [
+      " Knoxville",
+      " Pipeline",
+      " Snapchat",
+      " Lehr",
+      " Rap",
+      "uset"
+    ],
+    "top_suppressed": [
+      " lay",
+      "strip",
+      " heterogeneous",
+      " fears",
+      "sym",
+      "SelectedItem"
+    ],
+    "label": "→ increase (+0.11)"
+  },
+  "L23:F370": {
+    "layer": 23,
+    "feature": 370,
+    "target_effect": -0.1457,
+    "pushes": "decrease",
+    "effect_norm": 0.7426,
+    "concept": "?",
+    "top_promoted": [
+      " ideologies",
+      " fly",
+      "Initialized",
+      " commit",
+      "\toverride",
+      " committed"
+    ],
+    "top_suppressed": [
+      " datePicker",
+      " viewPager",
+      " cookbook",
+      " spriteBatch",
+      "intestinal",
+      "caffe"
+    ],
+    "label": "→ decrease (-0.15)"
+  },
+  "L23:F371": {
+    "layer": 23,
+    "feature": 371,
+    "target_effect": -0.1,
+    "pushes": "decrease",
+    "effect_norm": 0.6899,
+    "concept": "?",
+    "top_promoted": [
+      "Mario",
+      "DNS",
+      "Pokemon",
+      " Pharmacy",
+      "Florida",
+      " Smartphone"
+    ],
+    "top_suppressed": [
+      " conceal",
+      "PLAIN",
+      "tie",
+      "UMP",
+      " gather",
+      " Share"
+    ],
+    "label": "→ decrease (-0.10)"
+  },
+  "L23:F664": {
+    "layer": 23,
+    "feature": 664,
+    "target_effect": 0.1633,
+    "pushes": "increase",
+    "effect_norm": 0.815,
+    "concept": "?",
+    "top_promoted": [
+      " INTERRU",
+      " DISP",
+      " WARRANT",
+      " Xperia",
+      "arendra",
+      " backpage"
+    ],
+    "top_suppressed": [
+      " happy",
+      " sad",
+      "nt",
+      " In",
+      "id",
+      " callback"
+    ],
+    "label": "→ increase (+0.16)"
+  },
+  "L23:F764": {
+    "layer": 23,
+    "feature": 764,
+    "target_effect": -0.1313,
+    "pushes": "decrease",
+    "effect_norm": 0.7148,
+    "concept": "?",
+    "top_promoted": [
+      " selectedItem",
+      " Wimbledon",
+      " fflush",
+      " setVisible",
+      " desirable",
+      " tailored"
+    ],
+    "top_suppressed": [
+      " mosque",
+      "roof",
+      "Allen",
+      " mosques",
+      "Usuario",
+      "Back"
+    ],
+    "label": "→ decrease (-0.13)"
+  },
+  "L23:F892": {
+    "layer": 23,
+    "feature": 892,
+    "target_effect": -0.159,
+    "pushes": "decrease",
+    "effect_norm": 0.6497,
+    "concept": "?",
+    "top_promoted": [
+      " sane",
+      " beaut",
+      " Resolver",
+      " beauty",
+      " blasting",
+      " Linden"
+    ],
+    "top_suppressed": [
+      "oldem",
+      "tty",
+      " Corinthians",
+      "\tNULL",
+      "outcome",
+      " ARG"
+    ],
+    "label": "→ decrease (-0.16)"
+  },
+  "L23:F1012": {
+    "layer": 23,
+    "feature": 1012,
+    "target_effect": -0.1913,
+    "pushes": "decrease",
+    "effect_norm": 0.7031,
+    "concept": "?",
+    "top_promoted": [
+      "Woman",
+      " marginalized",
+      "igner",
+      "lexible",
+      "oose",
+      "Rare"
+    ],
+    "top_suppressed": [
+      " made",
+      " caused",
+      " formed",
+      " played",
+      " served",
+      "\tfound"
+    ],
+    "label": "→ decrease (-0.19)"
+  },
+  "L23:F1061": {
+    "layer": 23,
+    "feature": 1061,
+    "target_effect": 0.1821,
+    "pushes": "increase",
+    "effect_norm": 0.7481,
+    "concept": "?",
+    "top_promoted": [
+      " jig",
+      "TN",
+      "quisitions",
+      "ActionCreators",
+      "avascript",
+      "TA"
+    ],
+    "top_suppressed": [
+      " Sexy",
+      " Stem",
+      " Const",
+      " prestige",
+      " consts",
+      " Club"
+    ],
+    "label": "→ increase (+0.18)"
+  },
+  "L23:F1085": {
+    "layer": 23,
+    "feature": 1085,
+    "target_effect": 0.1947,
+    "pushes": "increase",
+    "effect_norm": 0.5957,
+    "concept": "?",
+    "top_promoted": [
+      " Widget",
+      " tk",
+      " onBind",
+      "lication",
+      "owitz",
+      "endimento"
+    ],
+    "top_suppressed": [
+      "pol",
+      " TEM",
+      " Fee",
+      " CFR",
+      " crab",
+      " renting"
+    ],
+    "label": "→ increase (+0.19)"
+  },
+  "L23:F1097": {
+    "layer": 23,
+    "feature": 1097,
+    "target_effect": -0.2128,
+    "pushes": "decrease",
+    "effect_norm": 0.7338,
+    "concept": "?",
+    "top_promoted": [
+      " modelName",
+      "returnValue",
+      " PVOID",
+      "RefCount",
+      " correspond",
+      "PointerType"
+    ],
+    "top_suppressed": [
+      " SplashScreen",
+      "iban",
+      " logout",
+      " JComboBox",
+      " Ranked",
+      " amused"
+    ],
+    "label": "→ decrease (-0.21)"
+  },
+  "L23:F1448": {
+    "layer": 23,
+    "feature": 1448,
+    "target_effect": 0.2112,
+    "pushes": "increase",
+    "effect_norm": 0.7687,
+    "concept": "?",
+    "top_promoted": [
+      " qualche",
+      "icking",
+      " stripped",
+      " plunged",
+      " struggling",
+      "illing"
+    ],
+    "top_suppressed": [
+      "elmet",
+      " Disposable",
+      "byterian",
+      " newPassword",
+      " Transparent",
+      "dhcp"
+    ],
+    "label": "→ increase (+0.21)"
+  },
+  "L23:F1490": {
+    "layer": 23,
+    "feature": 1490,
+    "target_effect": -0.2179,
+    "pushes": "decrease",
+    "effect_norm": 0.6805,
+    "concept": "?",
+    "top_promoted": [
+      " dang",
+      " toxin",
+      " nominated",
+      " eget",
+      " Bian",
+      " fitness"
+    ],
+    "top_suppressed": [
+      " Utt",
+      " LLVM",
+      " GetString",
+      "ALLEL",
+      "ammo",
+      "CHAT"
+    ],
+    "label": "→ decrease (-0.22)"
+  },
+  "L23:F1826": {
+    "layer": 23,
+    "feature": 1826,
+    "target_effect": 0.2506,
+    "pushes": "increase",
+    "effect_norm": 0.7846,
+    "concept": "?",
+    "top_promoted": [
+      " showModal",
+      "Spin",
+      "xious",
+      " PROT",
+      " SSR",
+      " Zam"
+    ],
+    "top_suppressed": [
+      " soldiers",
+      " Soldier",
+      " Ware",
+      " wolves",
+      " temple",
+      " president"
+    ],
+    "label": "→ increase (+0.25)"
+  },
+  "L23:F1827": {
+    "layer": 23,
+    "feature": 1827,
+    "target_effect": 0.2215,
+    "pushes": "increase",
+    "effect_norm": 0.7962,
+    "concept": "?",
+    "top_promoted": [
+      "\tCC",
+      " Laptop",
+      " Sheep",
+      " Mango",
+      " laptops",
+      " Oculus"
+    ],
+    "top_suppressed": [
+      "PointerType",
+      "REATED",
+      "ERSION",
+      "ALLERY",
+      "UCKET",
+      " WARRANT"
+    ],
+    "label": "→ increase (+0.22)"
+  },
+  "L23:F1838": {
+    "layer": 23,
+    "feature": 1838,
+    "target_effect": 0.117,
+    "pushes": "increase",
+    "effect_norm": 0.7115,
+    "concept": "?",
+    "top_promoted": [
+      " Florida",
+      " Texas",
+      " Arizona",
+      " Indonesia",
+      " Spain",
+      " Hawaii"
+    ],
+    "top_suppressed": [
+      " POSSIBILITY",
+      " thrott",
+      " Booster",
+      " berhasil",
+      " showMessage",
+      " RedirectToAction"
+    ],
+    "label": "→ increase (+0.12)"
+  },
+  "L23:F1906": {
+    "layer": 23,
+    "feature": 1906,
+    "target_effect": -0.168,
+    "pushes": "decrease",
+    "effect_norm": 0.716,
+    "concept": "?",
+    "top_promoted": [
+      "startsWith",
+      "charAt",
+      " propName",
+      " Chat",
+      "pageNum",
+      " projectName"
+    ],
+    "top_suppressed": [
+      " anguish",
+      " misery",
+      " agony",
+      " sexuales",
+      " unbearable",
+      " brill"
+    ],
+    "label": "→ decrease (-0.17)"
+  },
+  "L23:F1908": {
+    "layer": 23,
+    "feature": 1908,
+    "target_effect": 0.1879,
+    "pushes": "increase",
+    "effect_norm": 0.6346,
+    "concept": "?",
+    "top_promoted": [
+      " photoshop",
+      " accessor",
+      " hypocrisy",
+      " opportun",
+      " paramInt",
+      " Hawkins"
+    ],
+    "top_suppressed": [
+      "peech",
+      " Datum",
+      " bo",
+      "worksheet",
+      "OUN",
+      " pouvez"
+    ],
+    "label": "→ increase (+0.19)"
+  }
+}
