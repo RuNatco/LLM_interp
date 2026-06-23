@@ -99,7 +99,8 @@ def main():
     ap.add_argument("--graphs-dir", default=None)
     ap.add_argument("--steps", type=int, default=11)
     ap.add_argument("--random-seeds", type=int, default=5)
-    ap.add_argument("--sweep", default="0.0,0.25,0.5,0.75,1.0")
+    ap.add_argument("--sweep", nargs="?", const="0.0,0.25,0.5,0.75,1.0",
+                    default="0.0,0.25,0.5,0.75,1.0")
     ap.add_argument("--output", default="feature_faithfulness.json")
     args = ap.parse_args()
 

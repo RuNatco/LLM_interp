@@ -92,7 +92,8 @@ def select_edges(edges, top_edges):
     return out
 
 
-def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith_map):
+def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith_map,
+           view="output", agree_map=None):
     payload = json.loads(Path(graph_path).read_text())
     prompt = (payload.get("metadata", {}) or {}).get("prompt")
     tgt_meta = (payload.get("metadata", {}) or {}).get("target", {}) or {}
@@ -106,15 +107,22 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
                     model_output = vv
                     break
     nodes = {n["id"]: n for n in payload["nodes"]}
-    edges = select_edges(payload["edges"], top_edges)
+    if view == "feature":
+        view_edges = [e for e in payload["edges"]
+                      if e.get("kind") == "causal_feature_to_feature"]
+    else:
+        view_edges = [e for e in payload["edges"]
+                      if e.get("kind") != "causal_feature_to_feature"]
+    edges = select_edges(view_edges, top_edges)
 
     kept = set()
     for e in edges:
         kept.add(e["source"])
         kept.add(e["target"])
-    for nid, n in nodes.items():
-        if n.get("type") == "LogitTargetNode":
-            kept.add(nid)
+    if view == "output":
+        for nid, n in nodes.items():
+            if n.get("type") == "LogitTargetNode":
+                kept.add(nid)
 
     present = [(nodes[nid].get("layer") or 0) for nid in kept]
     target_y = (max(present) if present else 1) + 1.6
@@ -162,9 +170,19 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
         score = float(e.get("score", 0.0))
         color = "#1D9E75" if edge_influence(e) >= 0 else "#D85A30"
         lw = 1.0 + 3.4 * min(1.0, abs(score) / 0.4)
+        ls, ealpha = "-", 0.85
+        if view == "feature":
+            ls = "--"
+            if agree_map is not None:
+                a = agree_map.get((s, t))
+                if a is True:
+                    ls, ealpha = "-", 0.9
+                elif a is False:
+                    ls, ealpha = ":", 0.32
         ax.add_patch(FancyArrowPatch(
             pos[s], pos[t], arrowstyle="-|>", mutation_scale=11,
-            color=color, lw=lw, alpha=0.85, shrinkA=6, shrinkB=9,
+            color=color, lw=lw, alpha=ealpha, shrinkA=6, shrinkB=9,
+            linestyle=ls,
             connectionstyle="arc3,rad=0.06", zorder=2))
 
     offsets = [(0, 13), (0, -22), (0, 20), (0, -15)]
@@ -206,7 +224,7 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
                             bbox=dict(boxstyle="round,pad=0.2", fc="white",
                                       ec="#dcdcdc", lw=0.5, alpha=0.85))
 
-    if model_output is not None and target_y:
+    if view == "output" and model_output is not None and target_y:
         tnode = next((nid for nid in kept
                       if nodes[nid].get("type") == "LogitTargetNode"), None)
         if tnode:
@@ -218,18 +236,32 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
                         color="#9b2c2c", zorder=6, fontweight="bold")
 
     handles = []
-    for typ in ["CLTFeatureNode", "MLPErrorNode", "LogitTargetNode"]:
-        c, m, lab = TYPE_STYLE[typ]
-        if typ == "LogitTargetNode":
-            c, lab = "#5f6368", "target (\u0446\u0432\u0435\u0442 = \u0432\u044b\u0445\u043e\u0434)"
+    if view == "feature":
+        c, m, _ = TYPE_STYLE["CLTFeatureNode"]
         handles.append(plt.Line2D([], [], marker=m, color="w", markerfacecolor=c,
-                                  markersize=9, label=lab))
-    handles.append(plt.Line2D([], [], color="#9aa0a6", marker="o", lw=0,
-                              markersize=5, label="attn / residual / ln"))
-    handles.append(plt.Line2D([], [], color="#1D9E75", lw=3,
-                              label=f"causal score > 0 (\u2192 {pos_name})"))
-    handles.append(plt.Line2D([], [], color="#D85A30", lw=3,
-                              label=f"causal score < 0 (\u2192 {neg_name})"))
+                                  markersize=9, label="feature"))
+        handles.append(plt.Line2D([], [], color="#1D9E75", lw=3, ls="--",
+                                  label="\u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u043f\u043e\u0432\u044b\u0448\u0430\u0435\u0442 \u0444\u0438\u0447\u0443"))
+        handles.append(plt.Line2D([], [], color="#D85A30", lw=3, ls="--",
+                                  label="\u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u043f\u043e\u043d\u0438\u0436\u0430\u0435\u0442 \u0444\u0438\u0447\u0443"))
+        if agree_map is not None:
+            handles.append(plt.Line2D([], [], color="#666", lw=3, ls="-",
+                                      label="\u043f\u0440\u0435\u0434\u0441\u043a\u0430\u0437\u0430\u043d\u043e \u2248 \u043d\u0430\u0431\u043b\u044e\u0434\u0430\u0435\u043c\u043e"))
+            handles.append(plt.Line2D([], [], color="#666", lw=3, ls=":", alpha=0.5,
+                                      label="\u0440\u0430\u0441\u0445\u043e\u0436\u0434\u0435\u043d\u0438\u0435"))
+    else:
+        for typ in ["CLTFeatureNode", "MLPErrorNode", "LogitTargetNode"]:
+            c, m, lab = TYPE_STYLE[typ]
+            if typ == "LogitTargetNode":
+                c, lab = "#5f6368", "target (\u0446\u0432\u0435\u0442 = \u0432\u044b\u0445\u043e\u0434)"
+            handles.append(plt.Line2D([], [], marker=m, color="w", markerfacecolor=c,
+                                      markersize=9, label=lab))
+        handles.append(plt.Line2D([], [], color="#9aa0a6", marker="o", lw=0,
+                                  markersize=5, label="attn / residual / ln"))
+        handles.append(plt.Line2D([], [], color="#1D9E75", lw=3,
+                                  label=f"causal score > 0 (\u2192 {pos_name})"))
+        handles.append(plt.Line2D([], [], color="#D85A30", lw=3,
+                                  label=f"causal score < 0 (\u2192 {neg_name})"))
     ax.legend(handles=handles, loc="upper left", fontsize=8, frameon=False,
               ncol=1, labelspacing=0.35, handletextpad=0.5, borderaxespad=0.4)
     ax.annotate("\u0440\u0430\u0437\u043c\u0435\u0440/\u043d\u0430\u0441\u044b\u0449\u0435\u043d\u043d\u043e\u0441\u0442\u044c \u0444\u0438\u0447 \u221d |\u043a\u0430\u0443\u0437\u0430\u043b\u044c\u043d\u044b\u0439 \u0431\u0430\u043b\u043b| (\u0437\u0430\u0434\u0435\u0439\u0441\u0442\u0432\u043e\u0432\u0430\u043d\u043d\u043e\u0441\u0442\u044c)",
@@ -245,8 +277,12 @@ def render(graph_path, out_path, top_edges, figsize, labels, model_output, faith
         ax.set_xlim(min(mx) - 0.10, max(mx) + 0.10)
     else:
         ax.set_xlim(-0.04, 1.04)
-    info = (f"Deep Trace circuit \u2014 {len(causal_edges)} causal + "
-            f"{len(other_edges)} context edges")
+    if view == "feature":
+        info = (f"Deep Trace: \u0444\u0438\u0447\u0430\u2192\u0444\u0438\u0447\u0430 \u2014 "
+                f"{len(causal_edges)} \u0440\u0451\u0431\u0435\u0440")
+    else:
+        info = (f"Deep Trace: \u0444\u0438\u0447\u0430\u2192\u0446\u0435\u043b\u044c \u2014 "
+                f"{len(causal_edges)} causal + {len(other_edges)} context edges")
     if prompt:
         ax.set_title(info, fontsize=9, color="#666", pad=20)
         fig.suptitle(f"\u00ab{prompt} ___\u00bb", fontsize=13,
@@ -274,6 +310,8 @@ def main():
     ap.add_argument("--labels", default=None)
     ap.add_argument("--model-output", type=float, default=None)
     ap.add_argument("--faithfulness", default=None)
+    ap.add_argument("--path-faithfulness", default=None)
+    ap.add_argument("--view", choices=["output", "feature", "both"], default="both")
     args = ap.parse_args()
 
     if args.output and len(args.graphs) > 1:
@@ -286,6 +324,18 @@ def main():
             if p.get("prompt") is not None and p.get("base_metric") is not None:
                 faith_map[p["prompt"]] = float(p["base_metric"])
 
+    path_maps = {}
+    if args.path_faithfulness:
+        pj = json.loads(Path(args.path_faithfulness).read_text())
+        for g in pj.get("per_graph", []):
+            name = g.get("graph")
+            if not name:
+                continue
+            path_maps[name] = {
+                (e["source"], e["target"]): bool(e["agree"])
+                for e in g.get("path_edges", [])
+            }
+
     labels = {}
     if args.labels:
         raw = json.loads(Path(args.labels).read_text())
@@ -293,9 +343,32 @@ def main():
             k: (v if isinstance(v, str) else v.get("label", "")) for k, v in raw.items()}
 
     for graph_path in args.graphs:
-        out_path = args.output or str(Path(graph_path).with_suffix(".svg"))
-        render(graph_path, out_path, args.top_edges, args.figsize, labels,
-               args.model_output, faith_map)
+        payload = json.loads(Path(graph_path).read_text())
+        has_ff = any(e.get("kind") == "causal_feature_to_feature"
+                     for e in payload["edges"])
+        views = ["output", "feature"] if args.view == "both" else [args.view]
+        multi = len(views) > 1
+        for v in views:
+            if v == "feature" and not has_ff:
+                if args.view == "feature":
+                    print("no feature->feature edges in", graph_path)
+                continue
+            if args.output:
+                if multi:
+                    p = Path(args.output)
+                    tag = "features" if v == "feature" else "output"
+                    out_path = str(p.with_name(f"{p.stem}_{tag}{p.suffix}"))
+                else:
+                    out_path = args.output
+            else:
+                stem = str(Path(graph_path).with_suffix(""))
+                if v == "feature":
+                    out_path = f"{stem}_features.svg"
+                else:
+                    out_path = f"{stem}_output.svg" if multi else f"{stem}.svg"
+            render(graph_path, out_path, args.top_edges, args.figsize, labels,
+                   args.model_output, faith_map, view=v,
+                   agree_map=path_maps.get(Path(graph_path).name) if v == "feature" else None)
 
 
 if __name__ == "__main__":

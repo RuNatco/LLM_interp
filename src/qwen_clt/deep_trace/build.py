@@ -132,6 +132,7 @@ def select_feature_candidates(
     pos: int,
     max_feature_nodes: int,
     min_activation: float,
+    node_threshold: float = 1.0,
 ) -> list[FeatureCandidate]:
     candidates: list[FeatureCandidate] = []
     for layer, features in enumerate(features_by_layer):
@@ -161,6 +162,17 @@ def select_feature_candidates(
             candidates.append(candidate)
 
     candidates.sort(key=lambda item: abs(item.direct_score), reverse=True)
+    if 0.0 < node_threshold < 1.0 and candidates:
+        total = sum(abs(c.direct_score) for c in candidates)
+        if total > 0.0:
+            acc = 0.0
+            cut = len(candidates)
+            for i, c in enumerate(candidates):
+                acc += abs(c.direct_score)
+                if acc >= node_threshold * total:
+                    cut = i + 1
+                    break
+            candidates = candidates[:cut]
     return candidates[:max_feature_nodes]
 
 
@@ -361,6 +373,49 @@ def _feature_causal_residual_delta_edges(
     return scored_edges[:per_feature_limit]
 
 
+def _feature_causal_feature_delta_edges(
+    *,
+    candidate: FeatureCandidate,
+    baseline_cache: DeepTraceCache,
+    intervened_cache: DeepTraceCache,
+    target_pos: int,
+    candidate_nodes_by_layer: dict[int, list[tuple[int, str]]],
+    per_feature_limit: int,
+) -> list[DeepTraceEdge]:
+    scored_edges: list[DeepTraceEdge] = []
+    n_layers = len(baseline_cache.replacement_features)
+
+    for layer in range(candidate.layer + 1, n_layers):
+        base = baseline_cache.replacement_features[layer]
+        interv = intervened_cache.replacement_features[layer]
+        if base is None or interv is None:
+            continue
+        influence = (base - interv)[0, target_pos]
+        for feature_idx, node_id in candidate_nodes_by_layer.get(layer, []):
+            if node_id == candidate.node_id:
+                continue
+            score = float(influence[feature_idx].item())
+            scored_edges.append(
+                DeepTraceEdge(
+                    source=candidate.node_id,
+                    target=node_id,
+                    score=score,
+                    kind="causal_feature_to_feature",
+                    metadata={
+                        "is_causal": True,
+                        "intervention": "set_feature_value_to_zero",
+                        "score_definition": (
+                            "replacement_feature_act - intervened_feature_act "
+                            "at target_pos (positive: source raises target)"
+                        ),
+                    },
+                )
+            )
+
+    scored_edges.sort(key=lambda edge: abs(edge.score), reverse=True)
+    return scored_edges[:per_feature_limit]
+
+
 def _causal_validation_for_candidate(
     *,
     replacement_model,
@@ -372,6 +427,7 @@ def _causal_validation_for_candidate(
     negative_token_id: int,
     target_pos: int,
     target_vector: torch.Tensor,
+    candidate_nodes_by_layer: dict[int, list[tuple[int, str]]],
     feature_residual_edges_per_node: int,
 ) -> dict[str, Any]:
     intervened_cache = collect_deep_trace_cache(
@@ -415,6 +471,17 @@ def _causal_validation_for_candidate(
         ),
         per_feature_limit=feature_residual_edges_per_node,
     )
+    feature_delta_edges = _feature_causal_feature_delta_edges(
+        candidate=candidate,
+        baseline_cache=baseline_cache,
+        intervened_cache=intervened_cache,
+        target_pos=resolve_position(
+            target_pos,
+            baseline_cache.replacement.logits.shape[1],
+        ),
+        candidate_nodes_by_layer=candidate_nodes_by_layer,
+        per_feature_limit=feature_residual_edges_per_node,
+    )
     return {
         "kind": "feature_ablation",
         "baseline_logits": "replacement_logits",
@@ -434,6 +501,15 @@ def _causal_validation_for_candidate(
                 "metadata": edge.metadata,
             }
             for edge in residual_delta_edges
+        ],
+        "feature_delta_edges": [
+            {
+                "target": edge.target,
+                "score": edge.score,
+                "kind": edge.kind,
+                "metadata": edge.metadata,
+            }
+            for edge in feature_delta_edges
         ],
     }
 
@@ -480,6 +556,7 @@ def build_deep_trace_graph(
     causal_top_k: int = 8,
     min_activation: float = 0.0,
     feature_residual_edges_per_node: int = 3,
+    node_threshold: float = 1.0,
 ) -> tuple[DeepTraceGraph, DeepTraceCache]:
     input_ids, attention_mask = replacement_model.tokenize(prompt)
     replacement_config = ReplacementConfig()
@@ -509,7 +586,14 @@ def build_deep_trace_graph(
         pos=resolved_target_pos,
         max_feature_nodes=max_feature_nodes,
         min_activation=min_activation,
+        node_threshold=node_threshold,
     )
+
+    candidate_nodes_by_layer: dict[int, list[tuple[int, str]]] = {}
+    for c in candidates:
+        candidate_nodes_by_layer.setdefault(c.layer, []).append(
+            (c.feature_idx, c.node_id)
+        )
 
     causal_payloads: dict[str, dict[str, Any]] = {}
     for candidate in candidates[:causal_top_k]:
@@ -523,6 +607,7 @@ def build_deep_trace_graph(
             negative_token_id=negative_token_id,
             target_pos=target_pos,
             target_vector=target_vector,
+            candidate_nodes_by_layer=candidate_nodes_by_layer,
             feature_residual_edges_per_node=feature_residual_edges_per_node,
         )
 
@@ -704,6 +789,16 @@ def build_deep_trace_graph(
                         metadata=dict(item["metadata"]),
                     )
                 )
+            for item in causal_payload.get("feature_delta_edges", []):
+                edges.append(
+                    DeepTraceEdge(
+                        source=candidate.node_id,
+                        target=str(item["target"]),
+                        score=float(item["score"]),
+                        kind=str(item["kind"]),
+                        metadata=dict(item["metadata"]),
+                    )
+                )
         else:
             edges.extend(
                 _feature_decoder_residual_edges(
@@ -741,6 +836,7 @@ def build_deep_trace_graph(
         "edge_kinds": sorted({edge.kind for edge in edges}),
         "selection": {
             "max_feature_nodes": max_feature_nodes,
+            "node_threshold": node_threshold,
             "selected_feature_nodes": len(candidates),
             "top_error_nodes": top_error_nodes,
             "causal_top_k": causal_top_k,

@@ -4,7 +4,6 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${PROJECT_ROOT}"
 
-RUN_BACKUP=0
 SKIP_TRAIN=0
 SKIP_DEEP_TRACE=0
 ALLOW_EXISTING=0
@@ -19,15 +18,14 @@ Options:
   --gpus N                Number of GPUs for training (default: 1).
                           N=1 runs a single process; N>1 uses DDP via torchrun.
                           Eval / Deep Trace always run on a single process.
-  --backup-intermediate   Move intermediate output dirs to outputs/_backup after a successful run.
   --skip-train            Skip CLT training and run final eval / Deep Trace on existing checkpoint.
   --skip-deep-trace       Skip Deep Trace prompt suite.
   --allow-existing        Allow training into existing output dirs.
   -h, --help              Show this help.
 
 Default behavior refuses to train into existing output dirs, because training
-metrics are appended and checkpoints can be overwritten. Use the backup script
-or --allow-existing when that is intentional.
+metrics are appended and checkpoints can be overwritten. Use --allow-existing
+when that is intentional.
 EOF
 }
 
@@ -36,10 +34,6 @@ while [[ $# -gt 0 ]]; do
     --gpus)
       GPUS="$2"
       shift 2
-      ;;
-    --backup-intermediate)
-      RUN_BACKUP=1
-      shift
       ;;
     --skip-train)
       SKIP_TRAIN=1
@@ -91,8 +85,7 @@ if [[ "${SKIP_TRAIN}" -eq 0 && "${ALLOW_EXISTING}" -eq 0 ]]; then
     echo "Refusing to train into existing output dirs:" >&2
     printf '  %s\n' "${existing_dirs[@]}" >&2
     echo >&2
-    echo "Move old intermediate dirs first:" >&2
-    echo "  bash scripts/10_backup_intermediate_outputs.sh --apply" >&2
+    echo "Move or remove the old intermediate dirs first." >&2
     echo >&2
     echo "Or re-run with --allow-existing if overwriting/appending is intentional." >&2
     exit 2
@@ -131,11 +124,6 @@ if [[ "${SKIP_DEEP_TRACE}" -eq 0 ]]; then
   python3 scripts/12_visualize_deep_trace_graph.py \
     outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/*.json \
     || echo "Graph rendering skipped (matplotlib missing or no graphs)"
-fi
-
-if [[ "${RUN_BACKUP}" -eq 1 ]]; then
-  echo "Backup intermediate outputs"
-  bash scripts/10_backup_intermediate_outputs.sh --apply
 fi
 
 echo

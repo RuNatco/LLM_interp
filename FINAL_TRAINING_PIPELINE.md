@@ -37,6 +37,11 @@ median sign_match: 1.000
 mean MLP error norm: about 6.71
 ```
 
+Анализ контура ведётся по оси **rise − fall**: направление цены модель выражает
+токенами `rise`/`fall`, а не `increase`/`decrease` (у последней пары большое
+безусловное смещение). Целевые токены передаются скриптам 09/13b флагами
+`--positive " rise" --negative " fall"`. Подробности — в README → «Анализ контура».
+
 ## 0. Project Root
 
 ```bash
@@ -156,22 +161,37 @@ Inspect metrics:
 cat outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
 ```
 
-## 5. Build Final Deep Trace Stage 2 Suite
+## 5. Build Decisive Prompt Suite (rise − fall)
+
+Отбираем промпты, на которых базовая модель решительна по оси rise − fall
+(|logit(rise) − logit(fall)| ≥ threshold), и проверяем, что rise/fall — реально
+топовая ось предсказания (а не go/drop/increase):
+
+```bash
+python3 scripts/build_decisive_prompt_suite.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml \
+  --up " rise" --down " fall" --threshold 0.5 \
+  --output outputs/base_clt_recon_fidelity_v2_continue_v2/decisive_prompts.json
+
+python3 scripts/check_model_prediction.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml \
+  --prompts-file outputs/base_clt_recon_fidelity_v2_continue_v2/decisive_prompts.json
+```
+
+## 6. Build Final Deep Trace Suite
+
+Набор промптов — из шага 5; целевые токены оси — rise/fall.
 
 ```bash
 python3 scripts/09_build_deep_trace_prompt_suite.py \
   --checkpoint outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt \
+  --prompts-file outputs/base_clt_recon_fidelity_v2_continue_v2/decisive_prompts.json \
+  --positive " rise" --negative " fall" \
   --output-dir outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite \
   --summary-output outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json \
   --max-feature-nodes 64 \
   --top-error-nodes 8 \
   --causal-top-k 8
-```
-
-Inspect summary:
-
-```bash
-cat outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json
 ```
 
 Expected suite quality:
@@ -183,15 +203,63 @@ median sign_match = 1.00
 mean MLP error norm <= 7.00
 ```
 
-## 6. Final Artifacts
+## 7. Label Features by Effect
+
+Разметка фич по выходному эффекту (logit-lens на ось rise − fall), а не по
+активациям:
+
+```bash
+python3 scripts/13b_label_features_by_effect.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml \
+  --checkpoint outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt \
+  --graphs-dir outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite \
+  --positive " rise" --negative " fall" \
+  --output outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_effect_labels.json
+```
+
+## 8. Validate Graph Faithfulness (feature ablation)
+
+Кумулятивная абляция фич целевой позиции против случайного порядка; основная
+мера — win-rate (устойчива к нормировке), со sweep по решительности:
+
+```bash
+python3 scripts/17_feature_faithfulness.py \
+  --config configs/qwen2_5_0_5b_base_clt_recon_fidelity_v2_continue_v2.yaml \
+  --checkpoint outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt \
+  --graphs-dir outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite \
+  --sweep \
+  --output outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_faithfulness.json
+```
+
+Интерпретация: контур условно верен — win-rate > 0.5 на решительных промптах
+(|base| ≥ 0.75) и ≈ случайный там, где заменяющая модель индифферентна.
+Позиционный перестановочный тест (`16`, superseded) к одно-позиционным графам
+неприменим (вырождается в индексный порядок).
+
+## 9. Visualize Graphs
+
+```bash
+python3 scripts/12_visualize_deep_trace_graph.py \
+  outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/*_deep_trace.json \
+  --labels outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_effect_labels.json \
+  --faithfulness outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_faithfulness.json
+```
+
+Цвет рёбер и целевого ромба = знак влияния на цель (зелёный → rise, оранжевый →
+fall); узлы ошибок MLP — нейтральные.
+
+## 10. Final Artifacts
 
 Keep these as the final outputs:
 
 ```text
 outputs/base_clt_recon_fidelity_v2_continue_v2/clt_final.pt
 outputs/base_clt_recon_fidelity_v2_continue_v2/replacement_eval_metrics.json
+outputs/base_clt_recon_fidelity_v2_continue_v2/decisive_prompts.json
 outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite_summary.json
 outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/
+outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_effect_labels.json
+outputs/base_clt_recon_fidelity_v2_continue_v2/deep_trace_suite/feature_faithfulness.json
 ```
 
 All other experiment output dirs are intermediate and can remain under:

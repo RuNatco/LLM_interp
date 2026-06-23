@@ -9,9 +9,10 @@ CLT — разреженный автоэнкодер: энкодер на ка�
 реконструкциями CLT (replacement model), и полученное пространство фич
 используется для построения каузальных Deep Trace графов.
 
-Цель проекта — **воспроизвести этот interpretability-пайплайн и показать его
-состоятельность** на одной небольшой модели, с возможностью запуска через
-Docker на нескольких GPU.
+Цель проекта — **воспроизвести этот interpretability-пайплайн на одной небольшой
+открытой модели и картировать его границы** (где он состоятелен, а где упирается
+в масштаб словаря и грубость замены), с возможностью запуска через Docker на
+нескольких GPU.
 
 Полный маршрут:
 
@@ -171,6 +172,72 @@ mean-ablation и необученный CLT. Без этого разрыва а
 
 ---
 
+## Анализ контура (Deep Trace)
+
+### Целевая ось: rise − fall
+
+Направление цены модель выражает токенами `rise`/`fall` (также `go`/`be`), но
+**не** `increase`/`decrease`: у `increase` велик безусловный логит (на нейтральном
+«The price will» разность logit(`increase`)−logit(`decrease`) ≈ +1.9), поэтому
+пара increase/decrease смещена и не отражает предсказание. Целевой вектор
+атрибуции — `W_U[" rise"] − W_U[" fall"]`.
+
+Отбор «решительных» промптов по модулю разности логитов rise/fall и проверка,
+что rise/fall — действительно топовая ось (а не go/drop/increase):
+
+```bash
+python scripts/build_decisive_prompt_suite.py \
+  --config <config> --up " rise" --down " fall" --threshold 0.5 \
+  --output outputs/<run>/decisive_prompts.json
+
+python scripts/check_model_prediction.py \
+  --config <config> --prompts-file outputs/<run>/decisive_prompts.json
+```
+
+### Разметка фич по эффекту
+
+`13b_label_features_by_effect.py` размечает фичи по выходному эффекту (проекция
+декодера на целевое направление, logit-lens), а не только по максимально
+активирующим примерам — активационная метка может расходиться с каузальным
+эффектом. Метки (`L{layer}:F{idx} → ↑/↓ concept`) подключаются к визуализации
+флагом `--labels`.
+
+### Визуализация графа
+
+```bash
+python scripts/12_visualize_deep_trace_graph.py <graph>.json \
+  --labels outputs/<run>/feature_effect_labels.json \
+  --faithfulness outputs/<run>/feature_faithfulness.json
+```
+
+Цвет рёбер и целевого ромба отражает **знак влияния на цель** (зелёный → rise,
+оранжевый → fall); для рёбер `causal_ablation_effect` знак абляции инвертируется
+к знаку влияния. Узлы ошибок MLP — нейтральные, чтобы не конфликтовать с
+направленной палитрой.
+
+### Faithfulness: абляция признаков
+
+`17_feature_faithfulness.py` ранжирует фичи целевой позиции по каузальной
+атрибуции и кумулятивно их обнуляет, сравнивая графовый порядок со случайным.
+Основная мера — **win-rate** (доля шагов, где графовый порядок давит целевой
+сигнал сильнее случайного), устойчивая к нормировке.
+
+```bash
+python scripts/17_feature_faithfulness.py \
+  --config <config> --checkpoint <ckpt> \
+  --graphs-dir outputs/<run>/deep_trace_suite \
+  --sweep --output outputs/<run>/feature_faithfulness.json
+```
+
+Вывод: контур **условно верен** — win-rate уверенно выше 0.5 на промптах, где
+заменяющая модель решительна (|base| ≥ 0.75), и неотличим от случайного там, где
+она индифферентна (что отражает грубость замены, а не неверность контура).
+Позиционный перестановочный тест (`16`, superseded) к одно-позиционным Deep Trace
+графам неприменим: вся атрибуция приходится на целевую позицию, и порядок
+вырождается в индексный.
+
+---
+
 ## Структура проекта
 
 ```text
@@ -186,6 +253,17 @@ scripts/
   09_build_deep_trace_prompt_suite.py  # каузальные Deep Trace графы
   10_backup_intermediate_outputs.sh    # перенос промежуточных outputs в _backup
   11_run_final_training_pipeline.sh    # оркестратор всего пайплайна (--gpus N)
+  12_visualize_deep_trace_graph.py     # отрисовка графа (labeled; цвет = знак влияния)
+  13b_label_features_by_effect.py      # разметка фич по выходному эффекту (logit-lens)
+  14_compare_replacement_eval.py       # сравнение replacement-метрик (2048 vs 4096)
+  15_plot_pareto.py                    # Парето sparsity–fidelity (TopK-свип)
+  17_feature_faithfulness.py           # валидация графа абляцией признаков (win-rate)
+  build_decisive_prompt_suite.py       # отбор решительных rise−fall промптов
+  check_model_prediction.py            # диагностика оси rise/fall по промптам
+  _path_setup.py                       # настройка PYTHONPATH для скриптов
+  # superseded (оставлены для воспроизводимости промежуточных находок):
+  13_label_features.py                 # → 13b (разметка по активациям)
+  16_faithfulness_perturbation.py      # → 17 (позиционный тест, вырожден для 1-поз. графов)
 
 src/qwen_clt/
   models/        # CrossLayerTranscoder, Qwen hooks, proxy replacement model
@@ -238,3 +316,16 @@ ablations. Attention разложен до уровня вкладов `o_proj` 
 layer-level attention, но ещё не полный token-to-token attention path.
 Для top-k фич рёбра feature→residual строятся по каузальным дельтам кеша;
 для остальных фич остаются proxy-рёбра через веса декодера.
+
+Дополнительно:
+
+- **Графы одно-позиционны**: все узлы — на целевой позиции последнего токена;
+  кросс-позиционные пути через внимание не трассируются. Поэтому faithfulness
+  проверяется абляцией признаков (`17`), а не возмущением входных позиций.
+- **Словарь невелик**: 2048 фич/слой (≈49K суммарно) против 300K–30M в
+  канонических реализациях — на 1–2 порядка меньше, что задаёт грубость замены
+  (last-token top-1 ≈ 0.38).
+- **Смещение модели к росту**: на наборе решительных промптов 25/27 модель
+  относит к rise, включая сценарии избытка предложения, которые экономически
+  должны вести к снижению. Трассируемый контур — преимущественно «rise»-контур;
+  чувствительность к направлению баланса спроса и предложения слабая.

@@ -54,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--causal-top-k", type=int, default=8)
     parser.add_argument("--min-activation", type=float, default=0.0)
     parser.add_argument("--feature-residual-edges-per-node", type=int, default=3)
+    parser.add_argument("--node-threshold", type=float, default=1.0)
     parser.add_argument("--replacement-metrics", default=None)
     parser.add_argument("--min-last-token-top1", type=float, default=0.3)
     parser.add_argument("--max-target-logit-diff-mae", type=float, default=2.0)
@@ -134,6 +135,7 @@ def main() -> None:
             causal_top_k=args.causal_top_k,
             min_activation=args.min_activation,
             feature_residual_edges_per_node=args.feature_residual_edges_per_node,
+            node_threshold=args.node_threshold,
         )
         graph.metadata["replacement_fidelity"] = fidelity
         graph.metadata["checkpoint"] = str(Path(args.checkpoint))
